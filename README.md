@@ -6,7 +6,7 @@ Instructor: Alex Hoagland, Ph.D.
             alexander.hoagland@utoronto.ca 
             
  ## Repo organization
- 1. Syllabus
+ 1. The most recent syllabus is in the main folder. 
  2. Lectures are each contained in their own folder with slides and accompanying code/example papers. 
  3. Assignments, including problems and data sets, are collected into a single folder. Solutions available upon request. 
      + **Note: it is a violation of both university policy and intellectual property laws to post solutions to these problem sets anywhere on the internet.**
