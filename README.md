@@ -1,9 +1,11 @@
 # HAD5744_2022F
 Course materials for Health Econometrics I, University of Toronto IHPME -- Fall 2022
-Instructor: Alex Hoagland, Ph.D. 
-            Assistant Professor of Health Economics, IHPME
-            155 College Street, Suite 440
-            alexander.hoagland@utoronto.ca 
+
+Instructor: 
+* Alex Hoagland, Ph.D. 
+* Assistant Professor of Health Economics, IHPME
+* 155 College Street, Suite 440
+* alexander.hoagland@utoronto.ca 
             
  ## Repo organization
  1. The most recent syllabus is in the main folder. 
