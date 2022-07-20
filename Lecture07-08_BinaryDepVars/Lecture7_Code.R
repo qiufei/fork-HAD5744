@@ -80,7 +80,7 @@ plot(marginaleffects(m2)) # Convenience plot
 summary(marginaleffects(m2, datagrid()))
 
 
-## Testing and IV: Wald test
+## Testing: Wald test
 # Say we want to test joint hypothesis of age and sex on coverage decisions
 # Full model is m2 -- already estimated
 restricted <- glm(coverage ~ bmi + children + smoker,data=mydata,

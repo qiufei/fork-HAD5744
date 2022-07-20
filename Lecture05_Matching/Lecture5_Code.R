@@ -99,7 +99,7 @@ wate
 ################################
 
 
-# Skip in lecture -- additional reading only
+# Skip in lecture -- additional reading only # 
 ##### 3. Stratified matching with a package ####
 # Do this with package stratamatch (https://cran.r-project.org/web/packages/stratamatch/vignettes/Intro_to_stratamatch.html)
 library(stratamatch)
