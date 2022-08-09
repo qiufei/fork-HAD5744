@@ -15,6 +15,7 @@
 ##### Packages #####
 # install.packages('tidyverse') # if needed, install the package
 library(tidyverse) # call the relevant library
+library(broom) # Useful package for cleaning up regression output
 ###################################
 
 
@@ -80,13 +81,16 @@ tb <- tibble(
   x = rnorm(10000),
   u = rnorm(10000),
   y = 5.5*x + 12*u
-) 
+) # Here's our true model, with some randomness baked in
 
 reg_tb <- tb %>% 
   lm(y ~ x, .) %>%
-  print()
+  print() # What happens if we just regress y on x?
 
-reg_tb$coefficients
+# Looking at your model output
+summary(reg_tb) # gives you a full summary
+regdata <- tidy(reg_tb, conf.int=TRUE) # Stores regression output in a data frame
+regouts <- glance(reg_tb) # Stores other regression features in a data frame
 
 tb <- tb %>% 
   mutate(
@@ -94,11 +98,11 @@ tb <- tb %>%
     yhat2 = 0.0732608 + 5.685033*x, 
     uhat1 = residuals(lm(y ~ x, .)),
     uhat2 = y - yhat2
-  )
+  ) # How close are our predictions? 
 
 summary(tb[-1:-3])
 
-tb %>% 
+tb %>% # Let's talk about ggplot for a second
   lm(y ~ x, .) %>% 
   ggplot(aes(x=x, y=y)) + 
   ggtitle("OLS Regression Line") +
@@ -107,7 +111,8 @@ tb %>%
   annotate("text", x = -1.5, y = 30, color = "red", 
            label = paste("Intercept = ", -0.0732608)) +
   annotate("text", x = 1.5, y = -30, color = "blue", 
-           label = paste("Slope =", 5.685033))
+           label = paste("Slope =", 5.685033)) + 
+  theme_classic() + labs(x="X", y="Y")
 
 ### Calculate the R-squared
 SST <- tb %>% mutate(ybar=mean(y), sst=(y-ybar)^2) %>% select(sst) %>% summarise(sum(sst))
