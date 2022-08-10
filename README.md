@@ -16,3 +16,8 @@ Instructor:
  2. Lectures are each contained in their own folder with slides and accompanying code/example papers. 
  3. Assignments, including problems and data sets, are collected into a single folder. Solutions available upon request. 
      + **Note: it is a violation of both university policy and intellectual property laws to post solutions to these problem sets anywhere on the internet.**
+
+## Acknowledgements
+These materials borrow heavily from previous iterations of this course and other versions of it taught around the globe. In particular, I am grateful to the following individuals for sharing their course materials with me for the current iteration: 
+* Eric Nauenberg
+* Andrew Heiss
