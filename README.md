@@ -13,7 +13,10 @@ Instructor:
             
  ## Repo organization
  1. The most recent syllabus is in the main folder. 
- 2. Lectures are each contained in their own folder with slides and accompanying code/example papers. 
+ 2. Lectures are each contained in their own folder with: 
+     + Slides
+     + Example code (in both .R and .Rmd formats; note that .Rmd formats will be used for class) 
+     + Published papers that provide either additional theoretical details or example applications of the methods used. 
  3. Assignments, including problems and data sets, are collected into a single folder. Solutions available upon request. 
      + **Note: it is a violation of both university policy and intellectual property laws to post solutions to these problem sets anywhere on the internet.**
 
