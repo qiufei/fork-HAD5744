@@ -1,4 +1,4 @@
-########## Lecture3_Code.R
+########## Lecture4_Code.R
 # Creator: Alex Hoagland, alcobe@bu.edu
 # Created: 6/11/2022
 # Last modified: 6/11/2022
@@ -22,47 +22,9 @@ library(here)
 set.seed(03262020)
 ##########
 
-
-##### 1. Dummy Variable Trap ######
+###### 1. Interaction Terms #####
 res <- causaldata::restaurant_inspections
 
-# Our dummy variable: does weekend testing affect score? 
-summary(res$Weekend)
-
-# Linear model with dummy variable included
-m1 <- lm(inspection_score ~ Year + NumberofLocations + Weekend, data=res)
-
-# Let's make (but not save) a regression table for ease of interpretation
-msummary(list(m1),
-         stars=c('*' = .1, '**' = .05, '***' = .01))
-
-# What happens if we include both 1=Weekend and 1=Weekday in a regression? 
-res <- res %>% mutate(weekday = (Weekend == 0))
-m2 <- lm(inspection_score ~ Year + NumberofLocations + Weekend + weekday, data=res)
-msummary(list(m1,m2),
-         stars=c('*' = .1, '**' = .05, '***' = .01))
-summary(m2) # Code can usually detect the dummy variable trap, but don't count on it! 
-
-# Multiple dummy variables: region 
-res <- res %>% mutate(region = sample(seq(1:4),size=nrow(res),replace=TRUE)) # Generate a random region variable for restaurants 
-
-# Suppose that 1=West, 2=Midwest, 3=South, 4=East
-# Need to generate three dummy variables for the regression 
-res <- res %>% mutate(region_west = (region == 1), 
-                      region_midwest = (region == 2), 
-                      region_south = (region == 3))
-m3 <- lm(inspection_score ~ Year + NumberofLocations + Weekend + region_west + region_midwest + region_south, data=res)
-msummary(list(m1,m3),
-         stars=c('*' = .1, '**' = .05, '***' = .01)) 
-
-# Joint test of significance
-install.packages('lmtest')
-lmtest::waldtest(m1,m3) # Run a version of the regression without the variables you want to test, 
-                        # and one with full set of coefficients. Then use waldtest to test difference
-##################################
-
-
-###### 2. Interaction Terms #####
 # Question: What is the effect of education on wages?
 mydata <- causaldata::close_college
 
@@ -83,7 +45,7 @@ msummary(list(m1,m2,m3),
 ###################################
 
 
-###### 3. Polynomial Effects ####
+###### 2. Polynomial Effects ####
 # Same question: what is effect of experience on wages? 
 ggplot(data=mydata,aes(x=exper,y=lwage)) + geom_point() + 
   theme_minimal() + labs(x="Experience (Years)",y="Wages") + 
@@ -110,7 +72,7 @@ ggplot(data=mydata,aes(x=exper,y=lwage)) + geom_point() +
 ################################
 
 
-###### 4. Standard Errors ######
+###### 3. Standard Errors ######
 # 1. Heteroskedasticity
 mydata <- mydata %>% mutate(wage=exp(lwage))
 ggplot(mydata,aes(x=educ,y=wage)) + geom_point() + theme_minimal()
@@ -154,3 +116,4 @@ ggplot(allbetas,aes(x=allbetas)) + geom_histogram(fill='gray',color="black") + t
 
 sd(allbetas$allbetas) # This gives us a bootstrapped SE remarkably similar to the regression approach
 ###############################
+

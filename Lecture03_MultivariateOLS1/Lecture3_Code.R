@@ -15,13 +15,14 @@
 # install.packages('tidyverse') # if needed, install the package
 library(tidyverse) # call the relevant library
 library(faux) # Useful package for simulating data
+library(modelsummary) # For making regression tables
 ###################################
 
 
 ##### Multivariate Regression #####
 # Create a data set of 1000 regions, with some rates of hospitalizations, A1Cs, and education (in years)
 # Covariance matrix used to simulate the data
-covmat <- matrix(c(1,.4,-.2,.4,1,.9,-.2,.9,1),nrow=3,ncol=3)
+covmat <- matrix(c(1,.5,-.2,.5,1,.5,-.2,.5,1),nrow=3,ncol=3)
 mydata <- rnorm_multi(1000,3,0,1,covmat,varnames=c("hospitalizations","a1cs","education"))
 view(mydata)
 
@@ -33,6 +34,47 @@ summary(lm_simple)
 lm_complex <- lm(hospitalizations ~ a1cs + education, data=mydata)
 summary(lm_complex)
 #########################################
+
+
+##### 1. Dummy Variable Trap ######
+mydata <- mydata %>% mutate(female = ifelse(runif(nrow(mydata))>0.6, 1, 0),
+                            male = 1-female)
+
+# Our dummy variable: what is the gender composition of our sample?
+summary(mydata$female)
+
+# Linear model with dummy variable included
+lm_dummy <- lm(hospitalizations ~ a1cs + education + female, data=mydata)
+summary(lm_dummy) # What does it mean that this is significant? Should it be? 
+  # Return to this at the end of the lecture when we talk about validity traps
+
+# Let's make a regression table for ease of interpretation
+msummary(list("Simple"=lm_simple,"One Control"=lm_complex,"Full"=lm_dummy),
+         stars=c('*' = .1, '**' = .05, '***' = .01))
+
+# What happens if we include both male and female in a regression? 
+lm_dummytrap <- lm(hospitalizations ~ a1cs + education + female + male, data=mydata)
+summary(lm_dummytrap)
+  # Code can usually detect the dummy variable trap, but don't count on it! 
+
+# Multiple dummy variables: region 
+mydata <- mydata %>% mutate(region = sample(seq(1:4),size=nrow(mydata),replace=TRUE)) 
+  # Generate a random region variable for restaurants 
+
+# Suppose that 1=West, 2=Midwest, 3=South, 4=East
+# Need to generate three dummy variables for the regression 
+mydata <- mydata %>% mutate(region_west = (region == 1), 
+                      region_midwest = (region == 2), 
+                      region_south = (region == 3))
+lm_region <- lm(hospitalizations ~ a1cs + education + female + region_west + region_midwest + region_south, data=mydata)
+msummary(list("No Regions"=lm_dummy, "With Region Controls"=lm_region),
+         stars=c('*' = .1, '**' = .05, '***' = .01)) # Why aren't our other coefficients changed? Thoughts? 
+
+# # Joint test of significance
+# library('lmtest')
+# lmtest::waldtest(lm_dummy, lm_region) # Run a version of the regression without the variables you want to test, 
+# # and one with full set of coefficients. Then use waldtest to test difference
+##################################
 
 
 ##### Inference #####
