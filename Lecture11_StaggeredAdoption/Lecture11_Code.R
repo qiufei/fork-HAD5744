@@ -1,0 +1,94 @@
+########## Lecture9_Code.R
+# Creator: Alex Hoagland, alcobe@bu.edu
+# Created: 7/18/2022
+# Last modified: 
+#
+# PURPOSE
+#   Difference-in-differences
+#
+# NOTES: 
+#   - uses the Tidyverse package and Dplyr
+################################################################################
+
+
+##### Packages #####
+# install.packages('tidyverse') # if needed, install the package
+library(tidyverse) # call the relevant library
+library(faux) # Useful package for simulating data
+library(modelsummary) 
+library(causaldata) 
+library(here)
+library(foreign)
+library(zoo)
+library(fixest)
+library(TwoWayFEWeights)
+library(bacondecomp)
+
+set.seed(03262020)
+##########
+
+
+##### 1. Testing Parallel Trends #####
+# Dataset: COVID Vaccination rate by US state 
+mydata <- read.csv(here("us_state_vaccinations.csv"))
+mydata$date <- as.yearmon(mydata$date)
+
+# Trim out some "states" that we don't need
+`%!in%` <- Negate(`%in%`)
+mydata <- mydata %>% filter(location  %!in% c("American Samoa", "Bureau of Prisons", "Dept of Defense",
+                                             "Federated States of Micronesia", "Guam", "Indian Health Svc",
+                                             "Long Term Care", "Marshall Islands", "Northern Mariana Islands",
+                                             "Puerto Rico", "Republic of Palau", "United States", "Veterans Health",
+                                             "Virgin Islands"))
+
+# Group to month level
+mydata <- mydata %>% group_by(date, location) %>% 
+  summarize(total_vaccinations_per_hundred = sum(total_vaccinations_per_hundred,na.rm=T),
+            people_vaccinated_per_hundred = sum(people_vaccinated_per_hundred,na.rm=T),
+            monthly_vaccinations_per_million = sum(daily_vaccinations_per_million,na.rm=T))
+################################################################################
+
+
+##### 2. TWFE ####
+# Other states: May 2021: NY, MD; July 2021: MA, MI (there are others)
+regdata_dte <- mydata %>% mutate(treatdate = ifelse(location %in% c("Ohio", "New York State", "Maryland"), 2021.417,
+                                                     ifelse(location %in% c("Massachusetts", "Michigan"), 2021.583,NA)), # Note the treatment date doesn't matter for non-treated states
+                                 reltime = round((as.numeric(date) - treatdate)*12)) 
+regdata_dte <- regdata_dte %>% mutate(state = ifelse(location %in% c("Ohio", "New York State", "Maryland", "Massachusetts", "Michigan"), 1, 0),
+                                      logy = log(monthly_vaccinations_per_million+1))
+  # Make sure to reassign "treated" states
+
+dte <- feols(logy ~ i(reltime, state, ref = -1) | 
+               date + location, data = regdata_dte)
+
+# And use coefplot() for a graph of effects
+iplot(dte,ref.line=-0.2, 
+      ref.line.par=list(col="red",lty=1,lwd=2)) # How do we interpret this? 
+######################################
+
+
+###### 3. Diagnostics: Weighting
+regdata_dte <- regdata_dte %>% ungroup()%>% mutate(treated = ifelse(reltime >= 0,1,0))
+twowayfeweights(df=regdata_dte, # Dataframe
+                Y="logy", # Dep var
+                G="location", # group identifier
+                T="date", # Date var
+                D="treated", # Whether state was treated
+                cmd_type="feTR") # type of estimation to perform -- most commonly feTR
+weighttable <- twowayfeweights(df=regdata_dte, # Dataframe
+                               Y="logy", # Dep var
+                               G="location", # group identifier
+                               T="date", # Date var
+                               D="treated", # Whether state was treated
+                               cmd_type="feTR") # type of estimation to perform -- most commonly feTR
+  # lots of negative weighting here!
+
+# Another option: bacondecomp
+regdata_dte <- regdata_dte %>% mutate(treated = ifelse(is.na(treated),0,treated))
+regdata_dte <- regdata_dte %>% mutate(stateid = as.numeric(as.factor(location)),
+                                      dateid=as.numeric(as.factor(date))) # Need a state id variable as a number, not string
+bacon(formula = logy ~ treated, 
+      data=regdata_dte,
+      id_var="stateid",
+      time_var="dateid",
+      quietly=F)
