@@ -148,7 +148,7 @@ df <- data.frame(t(df), "Placebos")
 names(df) <- c("Placebo", "test")
 ggplot(df,aes(x=Placebo))+geom_histogram(bins=5,color='darkslategray4',fill='darkslategray3')+
   geom_vline(xintercept=as.numeric(didm_placebo[1]),size=2,color='red')+
-  theme_classic()+labs(x="Estimated Effect SIze")
+  theme_classic()+labs(x="Estimated Effect Size")
 ```
 
 ### Callaway and Sant'Anna (2021): The `did` package
@@ -258,7 +258,20 @@ out = event_study(
 plot_event_study(out)
 ```
 
-## Wooldridge
+## Extended TWFE Using Pooled OLS
+Finally, we can implement Wooldridge (2021)'s approach for a pooled OLS. This doesn't have a package, but it doesn't need one! Remember that in principle, this estimator simply suggests that to avoid some of the negative aspects of the traditional TWFE-DID estimator, one should simply use a fully interaction/saturated set of dummies allowing for treatment effect heterogeneity by cohort and timing.
+
+```{r pols}
+
+# To run this, we just need interactions between all cohorts and periods. 
+# We already have periods, let's add in cohorts
+regdata_dte <- regdata_dte %>% mutate(cohortid = as.factor(firsttreat))
+pols <- lm(logy ~ factor(cohortid) + factor(dateid) + factor(cohortid):factor(dateid), 
+           data=regdata_dte)
+summary(pols)
+```
+
+And that's it! The only trick is now to separate out the coefficients back into relative time and aggregate, or impose restrictions, in order to make this more interpretable. I'll leave these as an exercise. 
 
 ## Package Citations
 

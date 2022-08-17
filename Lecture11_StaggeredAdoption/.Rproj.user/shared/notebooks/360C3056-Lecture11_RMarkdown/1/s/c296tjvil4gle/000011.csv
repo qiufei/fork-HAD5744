@@ -1,10 +1,9 @@
-"0","weighttable <- twowayfeweights(df=regdata_dte, # Dataframe
-                               Y=""logy"", # Dep var
-                               G=""location"", # group identifier
-                               T=""date"", # Date var
-                               D=""treated"", # Whether state was treated
-                               cmd_type=""feTR"") # type of estimation to perform -- most commonly feTR
-"
+"0","regdata_dte <- regdata_dte %>% ungroup()%>% mutate(treated = ifelse(reltime >= 0,1,0))"
+"0","twowayfeweights(df=regdata_dte, # Dataframe"
+"0","                Y=""logy"", # Dep var"
+"0","                G=""location"", # group identifier"
+"0","                T=""date"", # Date var"
+"0","                cmd_type=""feTR"") # type of estimation to perform -- most commonly feTR"
 "2","Adding missing grouping variables: `Tfactor`"
 "1","[1]"
 "1"," ""Under the common trends assumption, """
@@ -23,7 +22,7 @@
 "1","
 "
 "1","[1]"
-"1"," ""beta is compatible with a DGP where the average of those ATT is equal to 0,"""
+"1"," ""The sum of the negative weights is equal to -0.705882."""
 "1","
 "
 "1","[1]"
