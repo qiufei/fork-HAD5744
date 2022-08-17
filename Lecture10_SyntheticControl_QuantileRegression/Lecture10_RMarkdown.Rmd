@@ -453,3 +453,10 @@ mypreds <- compute(nn,mydata)
 # mypreds$net.result*(max(mydata$exp_tot)-min(mydata$exp_tot))+min(mydata$exp_tot)
   # Again, add "echo=F" to the code chunk above before commenting this in. 
 ```
+
+## Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```

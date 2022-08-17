@@ -233,3 +233,10 @@ iplot(dte,ref.line=-0.2,
 ```
 
 There are difficulties with this approach, which we will detail in two more lectures. 
+
+## Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```

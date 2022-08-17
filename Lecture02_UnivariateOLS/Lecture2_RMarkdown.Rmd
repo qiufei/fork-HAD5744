@@ -254,3 +254,10 @@ as_tibble(t(sapply(lm, coef))) %>%
   labs(x="Estimated Slope Coefficient", y="Count",title="Distribution of Slope Coefficients") + 
   geom_vline(xintercept=2,color='red')
 ```
+
+## Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```

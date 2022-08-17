@@ -298,3 +298,10 @@ ps_match_trim <- lm(expenses ~ coverage, # + age + female + bmi +children + smok
 msummary(list("OLS"=m1, "Nearest Neighbor"=nn_match, "Propensity Score"=ps_match, "Trimmed Propensity Score"=ps_match_trim),
          stars=c('*' = .1, '**' = .05, '***' = .01))
 ```
+
+## Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```

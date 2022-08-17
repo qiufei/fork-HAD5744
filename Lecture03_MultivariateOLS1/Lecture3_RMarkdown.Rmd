@@ -268,3 +268,10 @@ msummary(list("Simple"=m1,"Full"=m2),
 # Default significance stars are +/*/**/*** .1/.05/.01/.001. Social science
 # standard */**/*** .1/.05/.01 can be restored with stars=c('*' = .1, '**' = .05, '***' = .01)
 ```
+
+## Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```

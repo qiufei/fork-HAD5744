@@ -153,3 +153,10 @@ ggplot(allbetas,aes(x=allbetas)) + geom_histogram(fill='gray',color="black") + t
 
 sd(allbetas$allbetas) # This gives us a bootstrapped SE remarkably similar to the regression approach
 ```
+
+## Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```

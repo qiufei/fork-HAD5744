@@ -119,4 +119,13 @@ ggplot(data=sim, aes(sim))+
 ```
 
 ## What do we do at the end of an RMarkdown file? 
+
+First, make sure to cite all the packages you used -- it's just as important to give credit to coding work as it is to other types of previous scholarly work. 
+
+### Package Citations
+```{r, include=FALSE}
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+
+# DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
+```
 Let's knit this file and save it! 
