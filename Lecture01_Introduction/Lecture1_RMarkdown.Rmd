@@ -100,7 +100,7 @@ Another, vastly superior method to graphics is dplyr's "ggplot", which follows t
 ```{r ggplot-histogram}
 sim <- tibble(sim) # We need a data frame for ggplot to work 
 ggplot(data=sim, aes(sim))+
-  geom_histogram(binwidth=.2,color='gray70',fill='cadetblue') +
+  geom_histogram(binwidth=.5,color='gray70',fill='cadetblue') +
   theme_minimal() + 
   labs(x="Estimated ATE", y="",title="Estimated ATE vs. Truth") + 
   geom_vline(xintercept=0.6, color="red", linetype="dashed",size=1)
