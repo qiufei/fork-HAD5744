@@ -13,7 +13,7 @@
 
 
 ##### 1. Call all relevant packages
-# install.packages('tidyverse') # if needed, install the package
+#install.packages('tidyverse') # if needed, install the package
 library(tidyverse) # call the relevant library
 
 
@@ -44,7 +44,7 @@ test <- gap()
 
 
 ##### 3. First code chunk: monte carlo simulations
-sim <- replicate(10000, gap()) # Run the gap function 10,000 times
+sim <- replicate(5000, gap()) # Run the gap function 10,000 times
 mean(sim) # The average estimated effect is almost 0.6!
 
 
@@ -53,8 +53,11 @@ hist(sim) # This kind of visualization is called "baseR"
 
 # Another kind of visualization uses the "ggplot" format -- this is helpful for making nice, publication-ready figures
 sim <- tibble(sim) # We need a tibble for ggplot to work
-histfig <- ggplot(data=sim, aes(sim))+geom_histogram(binwidth=.2,color='gray70',fill='cadetblue') + 
-  theme_minimal() + labs(x="Estimated ATE", y="",title="Estimated ATE vs. Truth") + geom_vline(xintercept=0.6, color="red", linetype="dashed",size=1)
+ggplot(data=sim, aes(sim))+
+  geom_histogram(binwidth=.2,color='gray70',fill='cadetblue') + 
+  theme_classic() + labs(x="Estimated ATE", y="",
+                         title="Estimated ATE vs. Truth") + 
+  geom_vline(xintercept=0.6, color="red", linetype="dashed",size=1)
   # Notes: 
   # First, need to tell ggplot what tibble object to look at (sim)
   # Then, the aes() command tells ggplot which variables to use. This depends on the particular geom() you want. 
@@ -64,4 +67,4 @@ histfig <- ggplot(data=sim, aes(sim))+geom_histogram(binwidth=.2,color='gray70',
   # theme_minimal() is a nice theme to use for the background. See themes here: https://ggplot2.tidyverse.org/reference/ggtheme.html
   # labs() defines the labels of interest
   # geom_vline() makes a vertical line at the true ATE (in this case, 0.6). 
-histfit
+histfig
