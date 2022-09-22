@@ -63,6 +63,111 @@ lm_complex <- lm(hospitalizations ~ a1cs + education, data=mydata)
 summary(lm_complex)
 ```
 
+## Inference in regression 
+
+### How to obtain standard errors
+Just like a lot of other things, standard errors are stored in the lm object! 
+
+```{r ses}
+myout <- summary(lm_complex)
+myout$coefficients[,2]
+```
+
+### Hypothesis testing
+
+Let's start with a population model where: 
+$$ y = 3 + .2x + \varepsilon, \varepsilon \sim \mathcal{N}(0,1).$$
+
+We will use this DGP to create a small data set ($N=200$) and run a simple regression. Then, we will save the coefficient $\beta_1$ and its standard error. 
+```{r hyp-test}
+set.seed(0326)
+nulldata <- tibble(x=rnorm(200),
+                 epsilon=rnorm(200),
+                 y=3+.2*x+epsilon)
+m1 <- lm(y ~ x,data=nulldata)
+out <- summary(m1) # I get a first estimate of beta = 0.12, and a SE = 0.064
+myse <- out$coefficients[2,2] # store the SE
+```
+
+Our test, formally, is of the null hypothesis: 
+
+$$ \mathcal{H}_0: \beta_1 = 0. $$
+Let's plot our regression estimate against the sampling distribution of the null hypothesis
+```{r hyp-test-2} 
+myalf <- .05 # State the rejection probability
+
+# Plot my estimate against the sampling distribution of the null hypothesis 
+graphdata <- tibble(x=rnorm(1e4,mean=0,sd=myse), # normal distribution
+                    xrej = ifelse(x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), # x's that fall in the rejection region based on alpha
+                    xrej2 = ifelse(-x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), # x's that fall in the rejection region based on alpha
+                    y=dnorm(x,mean=0,sd=myse)
+)
+
+ ggplot(data=graphdata) + 
+  geom_density(aes(x)) + 
+  geom_area(data=subset(graphdata, !is.na(xrej)),aes(x=x,y=y),fill="gray") + 
+   geom_area(data=subset(graphdata, !is.na(xrej2)),aes(x=x,y=y),fill="gray") + 
+  geom_vline(xintercept=0.12,linetype='dashed',color='red') + 
+  theme_minimal() + 
+  labs(x="Estimated Beta",y="Density")
+```
+
+So what do we conclude from the test? 
+
+#### One-sided testing
+
+What happens if I perform a one-sided test? This changes the rejection region (is that disingenious?)
+```{r hyp-test-3} 
+graphdata <- tibble(x=rnorm(1e5,mean=0,sd=myse), # normal distribution
+                     xrej = ifelse(x >= qnorm(1-(myalf), mean=0, sd=myse),x,NA), 
+                        # x's that fall in the rejection region based on alpha
+                     y=dnorm(x,mean=0,sd=myse)
+ )
+ 
+ ggplot(data=graphdata) + 
+   geom_density(aes(x)) + 
+   geom_area(data=subset(graphdata, !is.na(xrej)),aes(x=x,y=y),fill="gray") + 
+   geom_vline(xintercept=0.12,linetype='dashed',color='red') + 
+   theme_minimal() + 
+   labs(x="Estimated Beta",y="Density")
+```
+
+#### Statistical power
+
+In general, adding more data adds to our statistical power -- the probability that we will uncover an effect that is truly in the DGP. Let's increase our sample size to 20,000 and see how this affects our standard error (and hence, our test statistic)
+
+```{r hyp-test-4}
+ nulldata <- tibble(x=rnorm(20000),
+                  epsilon=rnorm(20000),
+                  y=3+.2*x+epsilon)
+ m1 <- lm(y ~ x,data=nulldata)
+ out <- summary(m1) # 
+ out
+ myse <- out$coefficients[2,2] # store the SE
+ 
+ graphdata <- tibble(x=rnorm(1e5,mean=0,sd=myse), # normal distribution
+                     xrej = ifelse(x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), 
+                        # x's that fall in the rejection region based on alpha
+                     xrej2 = ifelse(-x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), 
+                        # x's that fall in the rejection region based on alpha
+                     y=dnorm(x,mean=0,sd=myse)
+ )
+ 
+ ggplot(data=graphdata) + 
+   geom_density(aes(x)) + 
+   geom_area(data=subset(graphdata, !is.na(xrej)),aes(x=x,y=y),fill="gray") + 
+   geom_area(data=subset(graphdata, !is.na(xrej2)),aes(x=x,y=y),fill="gray") + 
+   geom_vline(xintercept=0.12,linetype='dashed',color='red') + 
+   theme_minimal() + 
+   labs(x="Estimated Beta",y="Density")
+ 
+# Calculate p-value of our estimated beta
+1-pnorm(out$coefficients[2,1],mean=0,sd=out$coefficients[2,2])
+
+# Calculate the t-statistic of our estimated beta
+out$coefficients[2,1]/out$coefficients[2,2] # Here, critical value is 1.96
+```
+
 ## Dummy Variables
 
 Let's add another control in the form of a dummy variable: physician sex (we want this to be binary for the purposes of the regression, so we will use sex instead of gender identity).
@@ -120,111 +225,6 @@ msummary(list("No Regions"=lm_dummy, "With Region Controls"=lm_region),
 # library('lmtest')
 # lmtest::waldtest(lm_dummy, lm_region) # Run a version of the regression without the variables you want to test, 
 # # and one with full set of coefficients. Then use waldtest to test difference
-```
-
-## Inference in regression 
-
-### How to obtain standard errors
-Just like a lot of other things, standard errors are stored in the lm object! 
-
-```{r ses}
-myout <- summary(lm_complex)
-myout$coefficients[,2]
-```
-
-### Hypothesis testing
-
-Let's start with a population model where: 
-$$ y = 3 + .2x + \varepsilon, \varepsilon \sim \mathcal{N}(0,1).$$
-
-We will use this DGP to create a small data set ($N=200$) and run a simple regression. Then, we will save the coefficient $\beta_1$ and its standard error. 
-```{r hyp-test}
-set.seed(0326)
-mydata <- tibble(x=rnorm(200),
-                 epsilon=rnorm(200),
-                 y=3+.2*x+epsilon)
-m1 <- lm(y ~ x,data=mydata)
-out <- summary(m1) # I get a first estimate of beta = 0.12, and a SE = 0.064
-myse <- out$coefficients[2,2] # store the SE
-```
-
-Our test, formally, is of the null hypothesis: 
-
-$$ \mathcal{H}_0: \beta_1 = 0. $$
-Let's plot our regression estimate against the sampling distribution of the null hypothesis
-```{r hyp-test-2} 
-myalf <- .05 # State the rejection probability
-
-# Plot my estimate against the sampling distribution of the null hypothesis 
-graphdata <- tibble(x=rnorm(1e6,mean=0,sd=myse), # normal distribution
-                    xrej = ifelse(x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), # x's that fall in the rejection region based on alpha
-                    xrej2 = ifelse(-x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), # x's that fall in the rejection region based on alpha
-                    y=dnorm(x,mean=0,sd=myse)
-)
-
- ggplot(data=graphdata) + 
-  geom_density(aes(x)) + 
-  geom_area(data=subset(graphdata, !is.na(xrej)),aes(x=x,y=y),fill="gray") + 
-   geom_area(data=subset(graphdata, !is.na(xrej2)),aes(x=x,y=y),fill="gray") + 
-  geom_vline(xintercept=0.12,linetype='dashed',color='red') + 
-  theme_minimal() + 
-  labs(x="Estimated Beta",y="Density")
-```
-
-So what do we conclude from the test? 
-
-#### One-sided testing
-
-What happens if I perform a one-sided test? This changes the rejection region (is that disingenious?)
-```{r hyp-test-3} 
-graphdata <- tibble(x=rnorm(1e6,mean=0,sd=myse), # normal distribution
-                     xrej = ifelse(x >= qnorm(1-(myalf), mean=0, sd=myse),x,NA), 
-                        # x's that fall in the rejection region based on alpha
-                     y=dnorm(x,mean=0,sd=myse)
- )
- 
- ggplot(data=graphdata) + 
-   geom_density(aes(x)) + 
-   geom_area(data=subset(graphdata, !is.na(xrej)),aes(x=x,y=y),fill="gray") + 
-   geom_vline(xintercept=0.12,linetype='dashed',color='red') + 
-   theme_minimal() + 
-   labs(x="Estimated Beta",y="Density")
-```
-
-#### Statistical power
-
-In general, adding more data adds to our statistical power -- the probability that we will uncover an effect that is truly in the DGP. Let's increase our sample size to 20,000 and see how this affects our standard error (and hence, our test statistic)
-
-```{r hyp-test-4}
- mydata <- tibble(x=rnorm(20000),
-                  epsilon=rnorm(20000),
-                  y=3+.2*x+epsilon)
- m1 <- lm(y ~ x,data=mydata)
- out <- summary(m1) # 
- out
- myse <- out$coefficients[2,2] # store the SE
- 
- graphdata <- tibble(x=rnorm(1e6,mean=0,sd=myse), # normal distribution
-                     xrej = ifelse(x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), 
-                        # x's that fall in the rejection region based on alpha
-                     xrej2 = ifelse(-x >= qnorm(1-(myalf)/2, mean=0, sd=myse),x,NA), 
-                        # x's that fall in the rejection region based on alpha
-                     y=dnorm(x,mean=0,sd=myse)
- )
- 
- ggplot(data=graphdata) + 
-   geom_density(aes(x)) + 
-   geom_area(data=subset(graphdata, !is.na(xrej)),aes(x=x,y=y),fill="gray") + 
-   geom_area(data=subset(graphdata, !is.na(xrej2)),aes(x=x,y=y),fill="gray") + 
-   geom_vline(xintercept=0.12,linetype='dashed',color='red') + 
-   theme_minimal() + 
-   labs(x="Estimated Beta",y="Density")
- 
-# Calculate p-value of our estimated beta
-1-pnorm(out$coefficients[2,1],mean=0,sd=out$coefficients[2,2])
-
-# Calculate the t-statistic of our estimated beta
-out$coefficients[2,1]/out$coefficients[2,2] # Here, critical value is 1.96
 ```
 
 ## Making a Regression Table

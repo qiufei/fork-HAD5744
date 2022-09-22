@@ -36,7 +36,7 @@ set.seed(122333) # Setting the seed helps to make random number generators give 
 
 ### Assigning Probabilities
 
-Let's keep the example of **health state** as a random variable, and assign some (made-up) proabilities:
+Let's keep the example of **health state** as a random variable, and assign some (made-up) probabilities:
 
 ```{r sample-probs}
 ##### Probability Review #####
@@ -65,7 +65,7 @@ We can then test if the information is *independent* -- does knowing I have an a
 p_chronic_givenacute == p_chronic * p_acute
 ```
 
-### Total Probabilty
+### Total Probability
 
 How does my probability of having a chronic illness evolve over time? Let's first consider just two periods.
 
@@ -82,7 +82,7 @@ Now suppose we want to know -- how long would I have to survive until my total p
 ```{r total-prob-function}
 dayprob <- function(n) { 
     # This function returns the probability of (i) being healthy until day n, then (ii) getting a chronic condition on day n 
-  return(p_chronic * (1-p_chronic)^n)
+  return(p_chronic * (1-p_chronic)^(n-1))
 } 
 
 # Now let's apply the function
