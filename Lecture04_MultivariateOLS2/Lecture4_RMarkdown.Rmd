@@ -36,7 +36,8 @@ set.seed(03262020) # Setting the seed helps to make random number generators giv
 ```
 
 ## Effect of an outlier in a regression
-Even a single outlier can change your regression by a lot! This is why nonlinear transformations can be so useful. This code creates an animation to show the effect of including/excluding a single outlier on a regression: 
+
+Even a single outlier can change your regression by a lot! This is why nonlinear transformations can be so useful. This code creates an animation to show the effect of including/excluding a single outlier on a regression:
 
 ```{r animate-outliers}
 library(gganimate)
@@ -80,17 +81,22 @@ anim_save(filename=here("RegressionOutlier.gif"),animation=animfig)
 
 ## Interaction Terms
 
-Our question will be: what is the effect of education on wages? We can estimate a simple regression controlling only for education and experience -- for now, assume that this is a fully specified model. 
+Our question will be: what is the effect of education on wages? We can estimate a simple regression controlling only for education and experience -- for now, assume that this is a fully specified model.
+
 ```{r mydata}
 mydata <- causaldata::close_college
 
-# First pass: simple regression
+# First pass: simple regression in levels
+mydata <- mydata %>% mutate(wage = exp(lwage))
+m_levels <- lm(wage ~ educ + exper, data=mydata)
+
 m1 <- lm(lwage ~ educ + exper, data=mydata)
-msummary(list(m1),
+msummary(list("levels"=m_levels, "log_y"=m1),
          stars=c('*' = .1, '**' = .05, '***' = .01)) 
 ```
 
-But what if we think the returns to education will differ across race? Let's use an interaction model to examine heterogeneous treatment effects here. Recall that in an interaction model we need to include **all level terms** of our variables of interest, not just the interactions.  
+But what if we think the returns to education will differ across race? Let's use an interaction model to examine heterogeneous treatment effects here. Recall that in an interaction model we need to include **all level terms** of our variables of interest, not just the interactions.
+
 ```{r interactions}
 # How does the effect of education differ across race?
 m2 <- lm(lwage ~ educ + exper + black + educ:black, data=mydata)
@@ -105,9 +111,10 @@ msummary(list(m1,m2,m3),
 
 ## Polynomial Models
 
-What if we think experience has a nonlinear effect on wages? Why might this be true? 
+What if we think experience has a nonlinear effect on wages? Why might this be true?
 
-Let's model this nonlinearity by including a squared term in the regression 
+Let's model this nonlinearity by including a squared term in the regression
+
 ```{r nonlinear}
 ggplot(data=mydata,aes(x=exper,y=lwage)) + geom_point() + 
   theme_minimal() + labs(x="Experience (Years)",y="Wages") + 
@@ -120,7 +127,8 @@ ggplot(data=mydata,aes(x=exper,y=lwage)) + geom_point() +
               formula=y ~ poly(x, 2, raw=TRUE),colour="red")
 ```
 
-How do our results change if we increase the order of the polynomial we fit? Why should/shouldn't we do this? 
+How do our results change if we increase the order of the polynomial we fit? Why should/shouldn't we do this?
+
 ```{r higher-order}
 # What about a cubic term? 
 ggplot(data=mydata,aes(x=exper,y=lwage)) + geom_point() + 
@@ -140,7 +148,7 @@ ggplot(data=mydata,aes(x=exper,y=lwage)) + geom_point() +
 
 ### Heteroskedasticity
 
-Let's check if our assumption of homoskedasticity is satisfied. 
+Let's check if our assumption of homoskedasticity is satisfied.
 
 ```{r plot-variance}
 mydata <- mydata %>% mutate(wage=exp(lwage))
@@ -148,6 +156,7 @@ ggplot(mydata,aes(x=educ,y=wage)) + geom_point() + theme_minimal()
 ```
 
 Clearly, this assumption fails. Let's implement robust standard errors in our regressions
+
 ```{r robust-ses}
 m1 <- lm(lwage ~ educ + exper + black + married + nearc4 + educ:black + exper:black, data=mydata)
 msummary(list("naive"=m1),
@@ -161,7 +170,7 @@ msummary(list("naive"=m1,"robust"=m1),
 
 ### Clustering
 
-Now, suppose that we have data on geography (US State). What if the returns to education/experience are correlated within states in unique ways? Why might this be true? 
+Now, suppose that we have data on geography (US State). What if the returns to education/experience are correlated within states in unique ways? Why might this be true?
 
 ```{r clustered-ses}
 mydata$state <- unlist(causaldata::abortion[1:3010,1])
@@ -174,7 +183,8 @@ msummary(list("naive"=m1,"robust"=m1,"Clustered"=m1),
 
 ### Bootstrapping standard errors
 
-For whatever reason, you may need to bootstrap your standard errors. This is a sample code for how you might do that. 
+For whatever reason, you may need to bootstrap your standard errors. This is a sample code for how you might do that.
+
 ```{r bootstrap}
 numiter <- 1000 # Number of times you want to sample
 sizesample=nrow(mydata) # Size of the sample you want to take
@@ -198,6 +208,7 @@ sd(allbetas$allbetas) # This gives us a bootstrapped SE remarkably similar to th
 ```
 
 ## Package Citations
+
 ```{r, include=FALSE}
 knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
 
