@@ -86,15 +86,18 @@ mydata <- mydata %>% mutate(bin = ifelse(bmi >= myquints[1] & bmi < myquints[2],
                                    ifelse(bmi >= myquints[2] & bmi < myquints[3],2,
                                     ifelse(bmi >= myquints[3] & bmi < myquints[4],3,
                                      ifelse(bmi >= myquints[4] & bmi < myquints[5],4,5)))))
+mydata %>% ggplot(aes(x=bin)) + geom_histogram() + theme_classic()
 ```
 
 In each bin, we then construct the differences in expenses between the insured and uninsured. This rests on the assumption that within each bin, there is no (less) selection between insurance status. We then weight these differences by the relative size of each group.
 
 ```{r subclass-differences}
 # For each bin, construct the difference in expenses by insurance category 
-bin_means <- mydata %>% group_by(bin,coverage) %>% summarize(expenses = mean(expenses)) %>% 
+bin_means <- mydata %>% group_by(bin,coverage) %>% 
+  summarize(expenses = mean(expenses)) %>% 
     # Creates bin/group means 
 group_by(bin) %>% summarize(diff = expenses[2] - expenses[1])
+bin_means %>% ggplot(aes(x=bin,y=diff)) + geom_point() # How do we interpret these? 
 
 # Create bins based on control group (uninsured)
 obs = nrow(mydata %>% filter(coverage == 0))
@@ -119,7 +122,11 @@ wt5 <- mydata %>%
   filter(bin == 5 & coverage == 0) %>%
   nrow(.)/obs
 
-bin_means[1,2]*wt1 + bin_means[2,2]*wt2 + bin_means[3,2]*wt3 + bin_means[4,2]*wt4 + bin_means[5,2]*wt5
+wtdiff <- as.numeric(bin_means[1,2]*wt1 + bin_means[2,2]*wt2 + bin_means[3,2]*wt3 + bin_means[4,2]*wt4 + bin_means[5,2]*wt5)
+bin_means %>% ggplot(aes(x=bin,y=diff)) + geom_point(size=2) + 
+  geom_hline(yintercept = wtdiff, linetype='dashed',color='blue') + 
+  theme_classic() + scale_y_continuous(labels=scales::dollar_format()) + 
+  labs(x="BMI Quantile", y="Spending Difference, Insured - Uninsured")
 ```
 
 Using this adjustment changes the ATE from \$6,321 down to \$5,475. But have we dealt with all the selection? 
@@ -173,12 +180,12 @@ control <- mydata %>% filter(coverage == 0)
 matched_data <- inner_join(treated,control,by=c('bmi','children','smoker'))
 matched_data %>% mutate(diff = expenses.x-expenses.y) %>% 
   group_by(bmi,children,smoker) %>% # Create one average per cell
-  summarize(diff = mean(diff)) %>% 
-  ungroup() %>% # Now overall average
-  summarize(diff = mean(diff)) # Estimated effect of insurance: -$269
+  summarize(diff = mean(diff), nobs = n()) %>% 
+  ungroup() %>% # Now overall (weighted) average
+  summarize(diff = weighted.mean(diff,nobs)) # Estimated effect of insurance: $42
 ```
 
-Now, the estimated effect of insurance has dropped to a \$269 **decrease** in expenditures. But notice how much our sample size has been reduced! 
+Now, the estimated effect of insurance has dropped to a \$42 increase in expenditures. But notice how much our sample size has been reduced! 
 
 We can get around this a little bit by not doing exact matching on a continuous variable (BMI) -- let's discretize it. 
 
@@ -186,12 +193,12 @@ We can get around this a little bit by not doing exact matching on a continuous 
 matched_data <- inner_join(treated,control,by=c('bin','children','smoker'))
 matched_data %>% mutate(diff = expenses.x-expenses.y) %>% 
   group_by(bin,children,smoker) %>% # Create one average per cell
-  summarize(diff = mean(diff)) %>% 
+  summarize(diff = mean(diff), nobs=n()) %>% 
   ungroup() %>% # Now overall average
-  summarize(diff = mean(diff)) # Estimated effect of insurance: +$127
+  summarize(diff = weighted.mean(diff,nobs)) # Estimated effect of insurance: +$155
 ```
 
-This isn't much better in terms of sample size. Even with only three variables to match on, we are severely restricting our sample. 
+Now, we're doing a huge many-to-many match! Do we really believe that all of these can be compared? Luckily, it doesn't change the estimate too much. 
 
 ## Nearest Neighbor Matching
 
@@ -258,7 +265,7 @@ hist(regdata_psm$distance) # Look at overall distribution of propensity scores
 ggplot(regdata_psm,aes(x=distance, fill = factor(coverage))) + 
   geom_histogram(binwidth = .05,color='black') + 
   theme_minimal() + 
-  labs(x="Propensity Score", y="Count",fill="Coverage")
+  labs(x="Propensity Score", y="Count",fill="Coverage") # What should we be looking for here? 
 ```
 
 It looks like our common support assumption won't be a problem here. Hence, we can run our regression: 

@@ -34,7 +34,7 @@ msummary(list(m1),
          stars=c('*' = .1, '**' = .05, '***' = .01)) 
 
 # How does the effect of education differ across race?
-m2 <- lm(lwage ~ educ + exper + black + educ:black, data=mydata)
+m2 <- lm(lwage ~ educ + exper + black + educ*black, data=mydata)
 msummary(list(m1,m2),
          stars=c('*' = .1, '**' = .05, '***' = .01)) 
 
