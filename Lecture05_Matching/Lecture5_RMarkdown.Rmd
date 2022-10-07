@@ -308,7 +308,12 @@ msummary(list("OLS"=m1, "Nearest Neighbor"=nn_match, "Propensity Score"=ps_match
 
 ## Package Citations
 ```{r, include=FALSE}
-knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+print("=============================Works Cited=============================")
+loadedNamespaces() %>%
+map(citation) %>%
+print(style = "text") # Adds citations for each package to end of .rmd file
+
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture.
 
 # DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
 ```

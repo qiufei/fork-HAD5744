@@ -276,7 +276,12 @@ And that's it! The only trick is now to separate out the coefficients back into 
 ## Package Citations
 
 ```{r, include=FALSE}
-knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture. 
+print("=============================Works Cited=============================")
+loadedNamespaces() %>%
+map(citation) %>%
+print(style = "text") # Adds citations for each package to end of .rmd file
+
+knitr::write_bib(file = 'packages.bib') # Constructs a citation file for all packages used in this lecture.
 
 # DON'T FORGET TO CITE YOUR PACKAGES IN YOUR PAPERS/ASSIGNMENTS. 
 ```
