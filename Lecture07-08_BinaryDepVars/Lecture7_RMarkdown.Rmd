@@ -98,6 +98,22 @@ msummary(list("LPM"=m1,"Logit"=m2,"Probit"=m3),
          stars=c('*' = .1, '**' = .05, '***' = .01))
 ```
 
+We can visualize the output of a logit/probit regression (somewhat; see below) using an odds plot 
+
+```{r odds-plot}
+# Fitted regression "lines"
+library(ggdist) # Cool extensions for ggplot
+ggplot(mydata,aes(x=bmi,y=coverage))+
+  geom_dots(aes(side=ifelse(coverage == 1, "bottom", "top")),
+            pch=19, color="gray70", scale=0.2) + 
+  geom_smooth(method="glm", method.args = list(family = binomial(link = "logit")),
+              size=1, color='green', se = FALSE)
+
+# Another option: coefplot
+library(coefplot)
+coefplot(m1,m2) + theme_classic() + labs(x="Log(Odds) Coefficient", y="Variable")
+```
+
 What do these coefficients mean? Why are the logit and probit so different? 
 
 Recall that we need to compare the **marginal effects** across regressions, as the actual coefficient magnitudes are meaningless without making the appropriate transformations. Let's calculate each type of marginal effect for the logit model (doing so for the probit model is very similar)
