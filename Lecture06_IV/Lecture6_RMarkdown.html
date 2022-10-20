@@ -11,7 +11,7 @@
 
 <meta name="author" content="Alex Hoagland" />
 
-<meta name="date" content="2022-08-12" />
+<meta name="date" content="2022-10-20" />
 
 <title>Lecture 6 Code</title>
 
@@ -589,7 +589,7 @@ pre code {
 
 <h1 class="title toc-ignore">Lecture 6 Code</h1>
 <h4 class="author">Alex Hoagland</h4>
-<h4 class="date">2022-08-12</h4>
+<h4 class="date">2022-10-20</h4>
 
 </div>
 
@@ -609,12 +609,13 @@ pre code {
 
 ### 0. Load the packages we will need for this file ####
 library(tidyverse) # load the installed package for each new session of R</code></pre>
-<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.1 ──</code></pre>
-<pre><code>## ✔ ggplot2 3.3.6     ✔ purrr   0.3.4
+<pre><code>## Warning: package &#39;tidyverse&#39; was built under R version 4.2.1</code></pre>
+<pre><code>## ── Attaching packages ─────────────────────────────────────── tidyverse 1.3.2 ──
+## ✔ ggplot2 3.3.6     ✔ purrr   0.3.4
 ## ✔ tibble  3.1.7     ✔ dplyr   1.0.9
 ## ✔ tidyr   1.2.0     ✔ stringr 1.4.0
-## ✔ readr   2.1.2     ✔ forcats 0.5.1</code></pre>
-<pre><code>## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+## ✔ readr   2.1.2     ✔ forcats 0.5.1
+## ── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
 ## ✖ dplyr::filter() masks stats::filter()
 ## ✖ dplyr::lag()    masks stats::lag()</code></pre>
 <pre class="r"><code>library(broom)
@@ -622,33 +623,40 @@ library(readxl) # Read in data
 library(modelsummary) # For making regression tables
 library(causaldata) # Useful toy data sets
 library(here) # Helpful in working with directories and projects</code></pre>
-<pre><code>## here() starts at C:/Users/alexh/Dropbox/Teaching/HAD5744/2022_Fall/HAD5744_2022F_Github</code></pre>
+<pre><code>## here() starts at C:/Users/alexh/Dropbox/Teaching/HAD5744/2022_Fall/HAD5744_2022F_Github/Lecture06_IV</code></pre>
 <pre class="r"><code>library(AER) # this package has lots of applied metrics packages</code></pre>
 <pre><code>## Warning: package &#39;AER&#39; was built under R version 4.2.1</code></pre>
-<pre><code>## Loading required package: car</code></pre>
-<pre><code>## Loading required package: carData</code></pre>
-<pre><code>## 
-## Attaching package: &#39;carData&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:causaldata&#39;:
+<pre><code>## Loading required package: car
+## Loading required package: carData
 ## 
-##     Mroz</code></pre>
-<pre><code>## 
-## Attaching package: &#39;car&#39;</code></pre>
-<pre><code>## The following object is masked from &#39;package:dplyr&#39;:
+## Attaching package: &#39;carData&#39;
 ## 
-##     recode</code></pre>
-<pre><code>## The following object is masked from &#39;package:purrr&#39;:
+## The following object is masked from &#39;package:causaldata&#39;:
 ## 
-##     some</code></pre>
-<pre><code>## Loading required package: lmtest</code></pre>
-<pre><code>## Loading required package: zoo</code></pre>
-<pre><code>## 
-## Attaching package: &#39;zoo&#39;</code></pre>
-<pre><code>## The following objects are masked from &#39;package:base&#39;:
+##     Mroz
 ## 
-##     as.Date, as.Date.numeric</code></pre>
-<pre><code>## Loading required package: sandwich</code></pre>
-<pre><code>## Loading required package: survival</code></pre>
+## 
+## Attaching package: &#39;car&#39;
+## 
+## The following object is masked from &#39;package:dplyr&#39;:
+## 
+##     recode
+## 
+## The following object is masked from &#39;package:purrr&#39;:
+## 
+##     some
+## 
+## Loading required package: lmtest
+## Loading required package: zoo
+## 
+## Attaching package: &#39;zoo&#39;
+## 
+## The following objects are masked from &#39;package:base&#39;:
+## 
+##     as.Date, as.Date.numeric
+## 
+## Loading required package: sandwich
+## Loading required package: survival</code></pre>
 <pre class="r"><code>library(gmm) # For estimation by GMM</code></pre>
 <pre><code>## Warning: package &#39;gmm&#39; was built under R version 4.2.1</code></pre>
 <pre class="r"><code>set.seed(03262020) # Setting the seed helps to make random number generators give us the same numbers across machines
@@ -1565,6 +1573,9 @@ Num.Obs.
 </tfoot>
 </table>
 </div>
+</div>
+<div id="package-citations" class="section level2">
+<h2>Package Citations</h2>
 </div>
 
 
