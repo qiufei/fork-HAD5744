@@ -127,7 +127,7 @@ Doesn't look like we have a relevance problem! Of course, given the simulated da
 
 ### IV with a package
 
-There are many ways to run 2SLS. The most common is `ivreg()` from the `AER` package (Another good option is `feols()` from `fixest`). A package can help you quickly return objects that are important to you without you writing tedious functions, and can do impoertant things like standard error corrections. Just make sure you know what's going on in the package (for example, by checking out \`?ivreg').
+There are many ways to run 2SLS. The most common is `ivreg()` from the `AER` package (Another good option is `feols()` from `fixest`). A package can help you quickly return objects that are important to you without you writing tedious functions, and can do important things like standard error corrections. Just make sure you know what's going on in the package (for example, by checking out \`?ivreg').
 
 ```{r ivreg}
 m4 <- ivreg(mortality ~ wt_months | blood_type, data=mydata,x=T) # the function of use is ivreg
@@ -166,6 +166,7 @@ msummary(list("GMM"=m5),
 ```
 
 ## Package Citations
+
 ```{r, include=FALSE}
 print("=============================Works Cited=============================")
 loadedNamespaces() %>%

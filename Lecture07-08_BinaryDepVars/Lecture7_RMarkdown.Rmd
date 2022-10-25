@@ -52,7 +52,7 @@ Suppose we are interested a causal model predicting which individuals purchase h
 
 Note that you should have a project loaded for this lecture in order to access the data using `here()`.
 
-Let's first estimate a linear probability model of insurance coverage as a function of enrollee age, sex, BMI, smoker status, and the number of children in the home. Let's estimate and interpret the LPM. 
+Let's first estimate a linear probability model of insurance coverage as a function of enrollee age, sex, BMI, smoker status, and the number of children in the home. Let's estimate and interpret the LPM.
 
 ```{r lpm}
 mydata <- readxl::read_xlsx(here("HealthExpenses.xlsx"))
@@ -86,11 +86,12 @@ Instead of an LPM, let's try estimating logit and probit models of the same equa
 ```{r logit}
 
 # Logit
-m2 <- glm(coverage ~ age + sex + bmi + children + smoker,data=mydata,
+library(fixest) 
+m2 <- feglm(coverage ~ age + sex + bmi + children + smoker,data=mydata,
           family='binomial'(link='logit')) # since we have binary data
 
 # Probit
-m3 <- glm(coverage ~ age + sex + bmi + children + smoker,data=mydata,
+m3 <- feglm(coverage ~ age + sex + bmi + children + smoker,data=mydata,
           family='binomial'(link='probit')) # since we have binary data
 
 msummary(list("LPM"=m1,"Logit"=m2,"Probit"=m3),
@@ -98,7 +99,7 @@ msummary(list("LPM"=m1,"Logit"=m2,"Probit"=m3),
          stars=c('*' = .1, '**' = .05, '***' = .01))
 ```
 
-We can visualize the output of a logit/probit regression (somewhat; see below) using an odds plot 
+We can visualize the output of a logit/probit regression (somewhat; see below) using an odds plot
 
 ```{r odds-plot}
 # Fitted regression "lines"
@@ -107,14 +108,19 @@ ggplot(mydata,aes(x=bmi,y=coverage))+
   geom_dots(aes(side=ifelse(coverage == 1, "bottom", "top")),
             pch=19, color="gray70", scale=0.2) + 
   geom_smooth(method="glm", method.args = list(family = binomial(link = "logit")),
-              size=1, color='green', se = FALSE)
+              size=1, color='green', se = FALSE) + 
+  labs(x="BMI", y="Pr(Coverage)")
 
-# Another option: coefplot
-library(coefplot)
-coefplot(m1,m2) + theme_classic() + labs(x="Log(Odds) Coefficient", y="Variable")
+# Another option: coefplot (useful in many settings! )
+library(fixest) # note: do not use the coefplot library! Much harder to use!
+fixest::coefplot(m1,drop = "Intercept") + theme_classic() # coefplot of LPM. Why do we like this?
+
+# Now, let's do coefplot of logit
+fixest::coefplot(m2,drop = "Intercept") + theme_classic()
+# See below for coefplot once converted to marginal effects
 ```
 
-What do these coefficients mean? Why are the logit and probit so different? 
+What do these coefficients mean? Why are the logit and probit so different?
 
 Recall that we need to compare the **marginal effects** across regressions, as the actual coefficient magnitudes are meaningless without making the appropriate transformations. Let's calculate each type of marginal effect for the logit model (doing so for the probit model is very similar)
 
@@ -122,7 +128,13 @@ Recall that we need to compare the **marginal effects** across regressions, as t
 
 # 1. Each individual marginal effect
 allmarginaleffects <- marginaleffects(m2) # Gives you individual ME for all variables/observations
-# View(allmarginaleffects) # sort by p-value to see high-impact factors
+allmarginaleffects <- allmarginaleffects %>% mutate(bin = ifelse(p.value > 0.1, 0, 
+                                           ifelse(p.value <= 0.1 & p.value > 0.05, 1, 
+                                                  ifelse(p.value <= 0.05 & p.value > 0.01, 2, 3))))
+ggplot(allmarginaleffects, aes(x=dydx)) + 
+  geom_histogram(aes(fill=as.factor(bin))) + 
+  theme_classic() + 
+  labs(x="Marginal Effect", y = "Value", fill = "Significance")
 
 # 2. and 4. MER and MEM: use the datagrid() function
 summary(marginaleffects(m2, datagrid(age  =50, sex = "male", bmi = 50, children = 0, smoker = 1, grid.type = 'counterfactual')))
@@ -135,24 +147,27 @@ plot(marginaleffects(m2)) # Convenience plot
 summary(marginaleffects(m2, datagrid()))
 ```
 
-Finally, suppose that we want to test the joint hypothesis of age and sex on coverage decisions. We can do this in a nonlinear regression model using the Wald test. To run this test, we need to have stored an object with the full model (e.g., including age and sex) and a restricted model (where, under the null hypothesis, these coefficients are forced to be zero): 
+Finally, suppose that we want to test the joint hypothesis of age and sex on coverage decisions. We can do this in a nonlinear regression model using the Wald test. To run this test, we need to have stored an object with the full model (e.g., including age and sex) and a restricted model (where, under the null hypothesis, these coefficients are forced to be zero):
 
 ```{r wald}
 # Full model is m2 -- already estimated
-restricted <- glm(coverage ~ bmi + children + smoker,data=mydata,
-          family='binomial'(link='logit')) # Restricted model is where age and sex are both 0
+restricted <- feglm(coverage ~ bmi + children + smoker,data=mydata,
+          family='binomial'(link='logit')) 
+  # Note: full and restricted model need to be estimated with same package
+  # Restricted model is where age and sex are both 0
 lmtest::waldtest(m2,restricted) 
 ```
 
-What does this test tell us? 
+What does this test tell us?
 
-## Poisson Regression 
+## Poisson Regression
 
-Now, suppose that our outcome of interest is not whether or not an individual purchased insurance, but the number of health visits they selected in a year. 
+Now, suppose that our outcome of interest is not whether or not an individual purchased insurance, but the number of health visits they selected in a year.
 
 ### Preliminaries
 
 First, I will simulate some data and bake in some correlations. You can mostly ignore this code
+
 ```{r sim-data}
 mydata$numvisits <- rpois(1340,2) # Base numvisits
 # Now bake in some correlation
@@ -193,7 +208,7 @@ exp(m_poisson$coefficients)-1 # What is the marginal effect for coverage? What i
 
 ### Testing for Dispersion
 
-We also need to test for overdispersion in order to run a Poisson model. That is, we want to test whether the mean and variance of our sample data are equivalent. 
+We also need to test for overdispersion in order to run a Poisson model. That is, we want to test whether the mean and variance of our sample data are equivalent.
 
 ```{r dispersion}
 var(mydata$numvisits)/mean(mydata$numvisits) # Lots of overdisperson! Could bootstrap this to get a CI. 
@@ -203,7 +218,7 @@ How does that affect our estimation decision? What can we do if we suffer from o
 
 ## Hurdle Model
 
-Given that we have so much overdispersion, the Poisson model may not be the best choice -- we could look at a zero-inflated model or a negative binomial approach. But let's also consider the fact that many individuals may not use **any** care in a year, so that `numvisits=0`. Does our Poisson model capture that well? 
+Given that we have so much overdispersion, the Poisson model may not be the best choice -- we could look at a zero-inflated model or a negative binomial approach. But let's also consider the fact that many individuals may not use **any** care in a year, so that `numvisits=0`. Does our Poisson model capture that well?
 
 ```{r pred-zeros}
 mydata$predicted_visits <- predict(m_poisson, type = "response")
@@ -219,9 +234,9 @@ round(exp) # predicted number of 0's
 sum(mydata$numvisits == 0) # Observed number of 0's
 ```
 
-Not really. 
+Not really.
 
-Instead, what if we estimated a hurdle model where we modeled the decision to seek **any** care (extensive margin) separately from the decision of how many visits to have (intensive margin). Note that when estimating a hurdle model, we have some package conflict issues with `modelsummary()` so our tables won't look quite as nice here. 
+Instead, what if we estimated a hurdle model where we modeled the decision to seek **any** care (extensive margin) separately from the decision of how many visits to have (intensive margin). Note that when estimating a hurdle model, we have some package conflict issues with `modelsummary()` so our tables won't look quite as nice here.
 
 ```{r hurdle}
 mod.hurdle <- hurdle(numvisits ~ age + sex + bmi + children + smoker + coverage, data = mydata)
@@ -240,13 +255,13 @@ ggplot(mydata)+
   labs(x="# of Visits",y="Count")
 ```
 
-## Multinomial Logit Regression 
+## Multinomial Logit Regression
 
-Finally, let's assume now that everyone in our data set has to have an MD visit, and either chooses (0) no treatment,(1) medication, or (2) surgery. How can we model the choice between these options? Multinomial logit! 
+Finally, let's assume now that everyone in our data set has to have an MD visit, and either chooses (0) no treatment,(1) medication, or (2) surgery. How can we model the choice between these options? Multinomial logit!
 
 ### Preliminaries
 
-Some more simulation of data: 
+Some more simulation of data:
 
 ```{r simulation-2}
 mydata$choice <- sample(c(0,1,2),size=1340,replace=T,prob=c(0.5,0.25,0.25)) # Base choices
@@ -268,13 +283,13 @@ mydata <- mydata %>%
 hist(mydata$choice)
 ```
 
-This shows us the choices individuals make in our (made up) data set. Now let's estimate! 
+This shows us the choices individuals make in our (made up) data set. Now let's estimate!
 
 ### Estimation
 
-First, we select our comparison outcome (in this case, no treatment). The best way to characterize this variable in R (for our package to understand it) is as a **factor**, which includes both a number ID and a value label for each choice in the discrete set. We've already been working with these a little bit (as dummy variables), but now we want to really have a 3-plus level factor variable for our multinomial logit to make sense. 
+First, we select our comparison outcome (in this case, no treatment). The best way to characterize this variable in R (for our package to understand it) is as a **factor**, which includes both a number ID and a value label for each choice in the discrete set. We've already been working with these a little bit (as dummy variables), but now we want to really have a 3-plus level factor variable for our multinomial logit to make sense.
 
-Again, `modelsummary()` won't work well here, so we'll use a separate package to make some tables. 
+Again, `modelsummary()` won't work well here, so we'll use a separate package to make some tables.
 
 ```{r mn-logit}
 mydata$choice <- factor(mydata$choice,levels=c(0,1,2),labels=c("Monitoring","Medication","Surgery")) 
@@ -289,7 +304,7 @@ mnl <- multinom(choice_relative ~ age + sex + bmi + children + smoker + expenses
 summary(mnl)
 ```
 
-### Presentation 
+### Presentation
 
 Now that the model has been estimated, let's try (being the operative word) to present this in a well-formatted and easy-to-understand way. This model is already complicated, so even without the package conflicts it can be tricky to know how to summamrize it. Below are some options--the way you choose to summarize this model will be entirely depeendent on the research context and the parameters you are after.
 
@@ -320,10 +335,9 @@ myme <- marginaleffects(mnl, type = "probs")
 summary(myme)
 ```
 
-
 ### Model Performance
 
-Finally, we need to check the accuracy of the model. Let's do this in a table *and* a figure. 
+Finally, we need to check the accuracy of the model. Let's do this in a table *and* a figure.
 
 ```{r accuracy}
 mydata$predicted_choice <- predict(mnl,newdata=mydata,"class")
@@ -340,6 +354,7 @@ ggplot(data=mydata,aes()) +
 ```
 
 ## Package Citations
+
 ```{r, include=FALSE}
 print("=============================Works Cited=============================")
 loadedNamespaces() %>%
