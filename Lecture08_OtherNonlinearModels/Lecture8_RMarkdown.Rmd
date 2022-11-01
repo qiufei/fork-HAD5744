@@ -33,132 +33,21 @@ library(here) # Helpful in working with directories and projects
 library(AER) # this package has lots of applied metrics packages
 library(foreign) # Helpful for reading in data from Stata or other code languages 
 library(devtools)
-install_github("vincentarelbundock/marginaleffects")
+# install_github("vincentarelbundock/marginaleffects")
 library(marginaleffects) # To calculate marginal effects
 library(pscl) # For hurdle models
 library(nnet) # For multinomial logit models
 library(knitr) # Alternative table package
 library(kableExtra) # Alternative table package
 library(gtsummary) # Alternative table package
+library(fixest) 
 
 set.seed(03262020) 
   # Setting the seed helps to make random number generators give us the same numbers across machines
 ################################################################################
-```
 
-## Linear Probability Models
-
-Suppose we are interested a causal model predicting which individuals purchase health insurance. We will model this purchase as a binary outcome, with $0 =$ no insurance, $1=$ insurance, and will use the same data from Lecture 5.
-
-Note that you should have a project loaded for this lecture in order to access the data using `here()`.
-
-Let's first estimate a linear probability model of insurance coverage as a function of enrollee age, sex, BMI, smoker status, and the number of children in the home. Let's estimate and interpret the LPM.
-
-```{r lpm}
 mydata <- readxl::read_xlsx(here("HealthExpenses.xlsx"))
-
-# Main (binary) outcome: who has coverage?
-m1 <- lm(coverage ~ age + sex + bmi + children + smoker,data=mydata)
-msummary(list("LPM"=m1),
-         vcov=c("robust"),
-         stars=c('*' = .1, '**' = .05, '***' = .01))
 ```
-
-One thing that we need to be concerned about with an LPM is predicted probabilities that fall outside of the unit interval (e.g., are not probabilities). Does that happen here? How does the model do for prediction generally?
-
-```{r pred-prob}
-
-# Look at predictions
-mydata$pred_coverage <- predict(m1, mydata)
-hist(mydata$pred_coverage) # what problems do you see here? 
-summary(mydata) # First problem: some predictions are outside of the unit interval!
-mydata %>% filter(pred_coverage > 1.14) # What does it mean to have a 114% probability of having coverage?
-
-hist(mydata$pred_coverage) # Second problem: how do you go from a predicted 57% probability of Y=1 to predicting Y? 
-mydata <- mydata %>% mutate(yhat = ifelse(pred_coverage >= 0.5, 1, 0)) # What happens if we assume a cutoff (Yhat >= 50% means Yhat = 1)? How good is our match then?
-table(mydata$coverage, mydata$yhat) # We incorrectly match 34% of the data!
-```
-
-## Logit and Probit Models
-
-Instead of an LPM, let's try estimating logit and probit models of the same equation:
-
-```{r logit}
-
-# Logit
-library(fixest) 
-m2 <- feglm(coverage ~ age + sex + bmi + children + smoker,data=mydata,
-          family='binomial'(link='logit')) # since we have binary data
-
-# Probit
-m3 <- feglm(coverage ~ age + sex + bmi + children + smoker,data=mydata,
-          family='binomial'(link='probit')) # since we have binary data
-
-msummary(list("LPM"=m1,"Logit"=m2,"Probit"=m3),
-         vcov=c(rep("robust",3)),
-         stars=c('*' = .1, '**' = .05, '***' = .01))
-```
-
-We can visualize the output of a logit/probit regression (somewhat; see below) using an odds plot
-
-```{r odds-plot}
-# Fitted regression "lines"
-library(ggdist) # Cool extensions for ggplot
-ggplot(mydata,aes(x=bmi,y=coverage))+
-  geom_dots(aes(side=ifelse(coverage == 1, "bottom", "top")),
-            pch=19, color="gray70", scale=0.2) + 
-  geom_smooth(method="glm", method.args = list(family = binomial(link = "logit")),
-              size=1, color='green', se = FALSE) + 
-  labs(x="BMI", y="Pr(Coverage)")
-
-# Another option: coefplot (useful in many settings! )
-library(fixest) # note: do not use the coefplot library! Much harder to use!
-fixest::coefplot(m1,drop = "Intercept") + theme_classic() # coefplot of LPM. Why do we like this?
-
-# Now, let's do coefplot of logit
-fixest::coefplot(m2,drop = "Intercept") + theme_classic()
-# See below for coefplot once converted to marginal effects
-```
-
-What do these coefficients mean? Why are the logit and probit so different?
-
-Recall that we need to compare the **marginal effects** across regressions, as the actual coefficient magnitudes are meaningless without making the appropriate transformations. Let's calculate each type of marginal effect for the logit model (doing so for the probit model is very similar)
-
-```{r marginal-fx}
-
-# 1. Each individual marginal effect
-allmarginaleffects <- marginaleffects(m2) # Gives you individual ME for all variables/observations
-allmarginaleffects <- allmarginaleffects %>% mutate(bin = ifelse(p.value > 0.1, 0, 
-                                           ifelse(p.value <= 0.1 & p.value > 0.05, 1, 
-                                                  ifelse(p.value <= 0.05 & p.value > 0.01, 2, 3))))
-ggplot(allmarginaleffects, aes(x=dydx)) + 
-  geom_histogram(aes(fill=as.factor(bin))) + 
-  theme_classic() + 
-  labs(x="Marginal Effect", y = "Value", fill = "Significance")
-
-# 2. and 4. MER and MEM: use the datagrid() function
-summary(marginaleffects(m2, datagrid(age  =50, sex = "male", bmi = 50, children = 0, smoker = 1, grid.type = 'counterfactual')))
-
-# 3. AME
-summary(marginaleffects(m2)) # This gives you AME
-plot(marginaleffects(m2)) # Convenience plot 
-
-# 4. MEM: 
-summary(marginaleffects(m2, datagrid()))
-```
-
-Finally, suppose that we want to test the joint hypothesis of age and sex on coverage decisions. We can do this in a nonlinear regression model using the Wald test. To run this test, we need to have stored an object with the full model (e.g., including age and sex) and a restricted model (where, under the null hypothesis, these coefficients are forced to be zero):
-
-```{r wald}
-# Full model is m2 -- already estimated
-restricted <- feglm(coverage ~ bmi + children + smoker,data=mydata,
-          family='binomial'(link='logit')) 
-  # Note: full and restricted model need to be estimated with same package
-  # Restricted model is where age and sex are both 0
-lmtest::waldtest(m2,restricted) 
-```
-
-What does this test tell us?
 
 ## Poisson Regression
 
@@ -208,13 +97,13 @@ exp(m_poisson$coefficients)-1 # What is the marginal effect for coverage? What i
 
 ### Testing for Dispersion
 
-We also need to test for overdispersion in order to run a Poisson model. That is, we want to test whether the mean and variance of our sample data are equivalent.
+We also need to test for over-dispersion in order to run a Poisson model. That is, we want to test whether the mean and variance of our sample data are equivalent.
 
 ```{r dispersion}
 var(mydata$numvisits)/mean(mydata$numvisits) # Lots of overdisperson! Could bootstrap this to get a CI. 
 ```
 
-How does that affect our estimation decision? What can we do if we suffer from overdispersion?
+How does that affect our estimation decision? What can we do if we suffer from over-dispersion?
 
 ## Hurdle Model
 
@@ -302,37 +191,80 @@ mnl <- multinom(choice_relative ~ age + sex + bmi + children + smoker + expenses
                 data = mydata) # Discuss iterations and output
 
 summary(mnl)
+exp(coef(mnl)) # Need to exponentiate to get odds
 ```
 
 ### Presentation
 
-Now that the model has been estimated, let's try (being the operative word) to present this in a well-formatted and easy-to-understand way. This model is already complicated, so even without the package conflicts it can be tricky to know how to summamrize it. Below are some options--the way you choose to summarize this model will be entirely depeendent on the research context and the parameters you are after.
+Now that the model has been estimated, let's try (being the operative word) to present this in a well-formatted and easy-to-understand way. This model is already complicated, so even without the package conflicts it can be tricky to know how to summarize it. I suggest a few things:
+
+-   A regression table showing the marginal effects + standard errors for each of the $J-1$ sets of $K$ coefficients.
+
+-   
 
 ```{r mnl-presentation}
-# Calculate our own significance
-z <- summary(mnl)$coefficients/summary(mnl)$standard.errors
-p <- (1 - pnorm(abs(z), 0, 1)) * 2
+# Store coefficients as relative changes in probability
+relprobs <- exp(coef(mnl)) # These are the relative probability changes for each outcome
+relprobs <- data.frame(t(relprobs)) 
+relprobs <- relprobs %>%
+  mutate(variable = row.names(relprobs)) %>%
+  pivot_longer(cols=c("Medication","Surgery"),names_to = "group") 
+  # Convert this to one column
 
-# Presenting the model: some options
-# View(tidy(mnl, conf.int = TRUE)) # Can save this as an object to construct your own table
+# Add in standard errors for coefficients
+relses <- summary(mnl)$standard.errors
+relses <- data.frame(t(relses)) 
+relses <- relses %>%
+  mutate(variable = row.names(relses)) %>%
+  pivot_longer(cols=c("Medication","Surgery"),names_to = "group",values_to="std.error") 
+  # Convert this to one column
 
-# an HTML version
-tidy(mnl, conf.int = TRUE) %>% 
-  kable() %>% 
-  kable_styling("basic", full_width = FALSE)
+# combine
+table_mnl <- full_join(relprobs,relses,by=c("group","variable"))
 
-# This gives you a table of relative risk ratios
-tbl_regression(mnl, exp = TRUE)
+# Need to rename some rows so that the marginal effects merge in 
+table_mnl <- table_mnl %>% mutate(variable = ifelse(variable=="sexmale","sex",variable))
 
-# Interperting the model
-exp(coef(mnl)) # this gives us relative risk ratios -- see slides about odds ratios
-
-# Calculating marginal effects: 
+# Calculate marginal effects: average marginal effect
 myme <- marginaleffects(mnl, type = "probs")
-# Warning: The standard errors estimated by `marginaleffects` do not match those
-# produced by Stata for `nnet::multinom` models. Please be very careful when
-# interpreting the results.
-summary(myme)
+ame <- myme %>% group_by(group, contrast, term) %>% summarize(dydx = mean(dydx),
+                                                    stderr = median(std.error),
+                                                    p = median(p.value))
+# Rename some rows to merge correctly 
+ame <- ame %>% mutate(term = ifelse(term == "region" & contrast == "northwest - northeast",
+                                    "regionnorthwest",
+                                    ifelse(term == "region" & contrast == "southwest - northeast",
+                                           "regionsouthwest",
+                                           ifelse(term=="region" & contrast == "southeast - northeast",
+                                                  "regionsoutheast",term)))) %>%
+  ungroup() %>% select(-c(contrast))
+
+names(ame) <- c("group","variable","ame","ame_stderr","ame_p")
+
+# Constructing a manual table with Kable extra: 
+table_mnl <- full_join(table_mnl,ame,by=c("group","variable"),)
+table_mnl$group <- factor(table_mnl$group,levels=c("Medication","Surgery","Monitoring"))
+table_mnl$variable <- factor(table_mnl$variable,
+                             levels=c("(Intercept)","age","sex","bmi","children","smoker",
+                                      "expenses","coverage","regionnorthwest","regionsoutheast",
+                                      "regionsouthwest"),
+                             labels=c("Level Shift","Age","Male","BMI","# of Children","Smoker",
+                                      "Total Health Expenses",
+                                      "Insurance Coverage","Region: Northwest","Region: Southeast",
+                                      "Region: Southwest"))
+table_mnl <- table_mnl %>% arrange(group) %>% 
+  select(group,variable,value,std.error,ame,ame_stderr,ame_p) # sort the table appropriately
+
+# Format it with kable extra
+options(knitr.kable.NA = '') # Gives us blanks instead of NAs in the table
+table_mnl %>% select(-c(group)) %>% # Remove name of group
+  kableExtra::kable(format = "html", digits=3,
+  col.names = c("Regressor","Multiplicative Effect", "SE", "Average", "SE", "p-value"),escape = F) %>%
+  kableExtra::add_header_above(c(" " = 1, "Exp(Regression Coefficients)" = 2, "Marginal Effects" = 3)) %>%
+  kableExtra::group_rows("Panel A: Medication", 1, 11) %>%
+  kableExtra::group_rows("Panel B: Surgery", 12, 22) %>%
+  kableExtra::group_rows("Panel C: Monitoring", 23, 32) %>%
+  kableExtra::kable_styling(bootstrap_options = c("hover"),full_width = F,font_size=12)
 ```
 
 ### Model Performance
