@@ -191,7 +191,7 @@ mnl <- multinom(choice_relative ~ age + sex + bmi + children + smoker + expenses
                 data = mydata) # Discuss iterations and output
 
 summary(mnl)
-exp(coef(mnl)) # Need to exponentiate to get odds
+exp(coef(mnl)) # Need to exponentiate to get odds 
 ```
 
 ### Presentation
