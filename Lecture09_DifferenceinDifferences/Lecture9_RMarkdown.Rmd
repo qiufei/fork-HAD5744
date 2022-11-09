@@ -64,7 +64,7 @@ mydata <- mydata %>% group_by(date, location) %>%
   summarize(total_vaccinations_per_hundred = sum(total_vaccinations_per_hundred,na.rm=T),
             people_vaccinated_per_hundred = sum(people_vaccinated_per_hundred,na.rm=T),
             monthly_vaccinations_per_million = sum(daily_vaccinations_per_million,na.rm=T))
-#Show rates of donation over time for each state
+#Show rates of vaccination over time for each state
 ggplot(mydata,aes(x=date,y=monthly_vaccinations_per_million,group=location)) + geom_line() + 
   theme_classic() + labs(x="Time",y="Monthly Vaccinations per Million")
 ```
@@ -78,18 +78,21 @@ Let's start with a figure of the trends prior to the vaccine lottery, as well as
 ```{r parallel-trends}
 # Look at two similar states: Ohio (vaccine lottery started June 2021) and Michigan
 ggplot(mydata[which(mydata$location=="Ohio"),],aes(x=date,y=monthly_vaccinations_per_million,group=location)) + geom_line() + 
-  theme_classic() + labs(x="Time",y="Monthly Vaccinations per Million")
+  theme_classic() + labs(x="Time",y="Monthly Vaccinations per Million") + 
+  geom_vline(xintercept = '2021.4',color='red')
 ggplot(mydata[which(mydata$location=="Michigan"),],aes(x=date,y=monthly_vaccinations_per_million,group=location)) + geom_line() + 
-  theme_classic() + labs(x="Time",y="Monthly Vaccinations per Million")
+  theme_classic() + labs(x="Time",y="Monthly Vaccinations per Million")+ 
+  geom_vline(xintercept = '2021.4',color='red')
 
 # Regression data -- just ohio and michigan 
 regdata <- mydata %>% filter(location %in% c("Michigan","Ohio"))
 
 # Definition of key variables
-regdata <- regdata %>% mutate(timegroup = ifelse(location == "Ohio",date,0))
+regdata <- regdata %>% mutate(treated = ifelse(location == "Ohio", 1, 0), 
+                              interaction = ifelse(location == "Ohio",date,0))
 
 # Statistical tests: are the two groups' trends different?
-pretrend_test <- lm(monthly_vaccinations_per_million ~ date + timegroup, data=regdata)
+pretrend_test <- lm(monthly_vaccinations_per_million ~ date + interaction, data=regdata)
 msummary(list(pretrend_test),
          vcov=c(rep("robust",1)),
          stars=c('*' = .1, '**' = .05, '***' = .01)) # Interpret each coefficient here
@@ -134,10 +137,16 @@ ggplot(data=regdata,aes(x=date,y=logy,group=state,color=factor(state))) +
   geom_vline(xintercept = 2021.417,size=1.5,color='red',linetype='dashed')
 
 # Test of trend differences in logs
-pretrend_test2 <- lm(logy ~ date + timegroup, data=regdata)
+pretrend_test2 <- lm(logy ~ date + interaction, data=regdata)
 msummary(list("Levels"=pretrend_test,"Logs"=pretrend_test2),
          vcov=c(rep("robust",2)),
          stars=c('*' = .1, '**' = .05, '***' = .01)) # May consider using log(y) anyway -- why?
+
+# Log DID
+did_log <- lm(logy ~ state + post + inter, data=regdata)
+msummary(list("Simple DID"=did_simple,"Log(y)"=did_log),
+         vcov=c(rep("robust",2)),
+         stars=c('*' = .1, '**' = .05, '***' = .01)) # Interpret each coefficient here
 ```
 
 ## Generalized DiD 
@@ -154,7 +163,7 @@ mydata <- mydata %>% mutate(state = ifelse(location == "Ohio",1,0),
 # fixed effect by default, no adjustment necessary
 did_full <- feols(logy ~ inter | location + date,
               data = mydata)
-msummary(list("Simple"=did_simple,"Full"=summary(did_full)),
+msummary(list("Simple"=did_log,"Full"=summary(did_full)),
          stars = c('*' = .1, '**' = .05, '***' = .01)) # Why is this different? What makes it more precise? What makes it less believable?
 ```
 
