@@ -41,8 +41,9 @@ library(fixest)
 library(TwoWayFEWeights)
 library(bacondecomp)
 library(DIDmultiplegt)
-library(did)
+# library(did)
 library(did2s)
+# library(etwfe)
 
 set.seed(03262020) 
   # Setting the seed helps to make random number generators give us the same numbers across machines
@@ -121,9 +122,51 @@ bacon(formula = logy ~ treated,
       id_var="stateid",
       time_var="dateid",
       quietly=F)
+
+
 ```
 
 ## Alternative Estimators
+
+### Stacked DID
+
+To run stacked DID, we will create a stack for all cohorts that are treated at a certain point. 
+
+``` {r stacked}
+# first, identify all cohorts of treated observations
+cohort_dates <- regdata_dte %>% filter(treated == 1) %>% 
+  group_by(stateid) %>% 
+  filter(date == min(date)) # %>% ungroup() %>% 
+  # select(date) %>% unique()
+# two cohorts: Jun and Aug 2021
+
+# for each cohort, pull all treated at time t + those not treated between (t-4,t+4)
+`%!in%` <- Negate(`%in%`)
+stack_1 <- regdata_dte %>% 
+  filter(dateid >= 2 & dateid <= 10) %>% # Appropriate timing
+  filter(stateid %!in% c(22,23)) %>% # Clean controls
+  group_by(stateid) %>% mutate(evertreated = max(treated)) %>% ungroup() %>% 
+  mutate(reltime = ifelse(evertreated == 1, dateid - 6, NA))
+  # Reset relative time for this cohort
+  
+stack_2 <- regdata_dte %>% 
+  filter(dateid >= 4 & dateid <= 12) %>% 
+  filter(stateid %!in% c(21,33,36)) %>% 
+  group_by(stateid) %>% mutate(evertreated = max(treated)) %>% ungroup() %>% 
+   mutate(reltime = ifelse(evertreated == 1, dateid - 8, NA))
+  # Reset relative time for this cohort
+
+# create stacked data
+stack <- rbind(stack_1,stack_2)
+
+# run event study on this data
+dte <- feols(monthly_vaccinations_per_million ~ i(reltime, ref = -1) | 
+               dateid + stateid, data = stack)
+
+# And use coefplot() for a graph of effects
+iplot(dte,ref.line=-0.2, 
+      ref.line.par=list(col="red",lty=1,lwd=2)) # How do we interpret this? 
+```
 
 ### $DID_M$ Estimator
 

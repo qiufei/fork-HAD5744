@@ -150,7 +150,7 @@ vaccine_out %>%
   as.data.frame() %>%
   stargazer(summary = FALSE, rownames = FALSE, 
             caption = "Balance Table", 
-            label = "balancetable") # Note: try this in R Markdown
+            label = "balancetable", type="html") # Note: try this in R Markdown
 ```
 
 ### Interpreting the Synthetic Control
@@ -310,12 +310,12 @@ coefs <- rep(NA, 10) # empty vector: coefficients
 lb <- rep(NA, 10) # empty vector: 95% LB
 ub <- rep(NA, 10) # empty vector: 95% UB
 for (t in 1:10) {
-  mytau[t] <- t/10
+  mytau[t] <- t/10 # indicate which decile I am using
   print(paste0("Considering quantile ",mytau[t],sep=" "))
   myreg <- rq(exp_tot ~ anylim + age + female + race_bl + race_oth +eth_hisp + famsize + ed_hs + ed_hsplus + ed_col + lninc + reg_midw + reg_south + reg_west + ins_mcare + ins_mcaid + ins_unins + ins_dent,
               data=mydata,
-              weights=wtdper,
-              tau = mytau[t])
+              weights=wtdper, # use survey weights (not relevant to qr)
+              tau = mytau[t]) # tau ranges from 0 to 1
   coefs[t] <- myreg$coefficients[2]
   mysum <- summary(myreg)
   lb[t] <- coefs[t]-1.96*mysum$coefficients[2,2]
