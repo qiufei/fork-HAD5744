@@ -154,7 +154,8 @@ stack_2 <- regdata_dte %>%
   filter(stateid %!in% c(21,33,36)) %>% 
   group_by(stateid) %>% mutate(evertreated = max(treated)) %>% ungroup() %>% 
    mutate(reltime = ifelse(evertreated == 1, dateid - 8, NA))
-  # Reset relative time for this cohort
+  
+# Reset relative time for this cohort
 
 # create stacked data
 stack <- rbind(stack_1,stack_2)
