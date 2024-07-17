@@ -62,6 +62,14 @@ But if we control for average patient education, the results change:
 lm_complex <- lm(hospitalizations ~ a1cs + education, data=mydata)
 summary(lm_complex)
 ```
+How can we visualize these regressions? Let's use a coefficient plot! 
+```{r coefplot}
+library(dotwhisker)
+library(gapminder)
+
+dwplot(lm_complex) # how can you customize this? 
+# a tutorial: https://felixhaass.github.io/dataviz_ggplot2/session4.html
+```
 
 ## Inference in regression 
 

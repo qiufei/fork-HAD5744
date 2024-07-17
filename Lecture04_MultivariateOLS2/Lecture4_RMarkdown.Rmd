@@ -30,9 +30,48 @@ library(faux) # Useful package for simulating data
 library(modelsummary) # For making regression tables
 library(causaldata) # Useful toy data sets
 library(here) # Helpful in working with directories and projects
+library(RM.weights) # this is where our sample data comes from 
 
 set.seed(03262020) # Setting the seed helps to make random number generators give us the same numbers across machines
 ################################################################################
+```
+
+Throughout, we have two examples; first, we have some data on food insecurity that mirrors our case study. Second, we have data on the effect of education on wages for college graduates.
+
+## Scaling and Weighting Regressors
+
+Let's think about what happens when we adjust experience to be in months instead of years. Then, let's weight the regressions.
+
+```{r mydata}
+# first, an example with food insecurity 
+data("data.FAO_country1")
+
+# base regression
+fao_levels <- lm(HUNGRY ~ education + gender + age + urbanrural, data=data.FAO_country1)
+
+# what if we measure age in months? 
+data.FAO_country1 <- data.FAO_country1 %>% mutate(age_m = age * 12)
+fao_transformed <- lm(HUNGRY ~ education + gender + age_m + urbanrural, data=data.FAO_country1)
+msummary(list("Base"=fao_levels, "Age in Months"=fao_transformed),
+         stars=c('*' = .1, '**' = .05, '***' = .01), fmt=5) 
+
+# Now what if we weight using the survey weights ("wt")
+fao_weighted <- lm(HUNGRY ~ education + gender + age + urbanrural,
+                   data=data.FAO_country1, weights=wt)
+
+msummary(list("Base"=fao_levels, "Weighted Regression"=fao_weighted),
+         stars=c('*' = .1, '**' = .05, '***' = .01)) # what might we interpret here? 
+
+# and here's the example on college attendance
+mydata <- causaldata::close_college
+
+# First pass: regression with education and experience as covariates 
+mydata <- mydata %>% mutate(exper_m = exper * 12)
+m_levels <- lm(wage ~ educ + exper, data=mydata)
+m_transformed <- lm(wage ~ educ + exper_m, data=mydata)
+
+msummary(list("Base"=m_levels, "Months of Experience"=m_transformed),
+         stars=c('*' = .1, '**' = .05, '***' = .01)) 
 ```
 
 ## Effect of an outlier in a regression
@@ -79,9 +118,9 @@ animate(animfig)
 anim_save(filename=here("RegressionOutlier.gif"),animation=animfig)
 ```
 
-## Interaction Terms
+## Transformed Models
 
-Our question will be: what is the effect of education on wages? We can estimate a simple regression controlling only for education and experience -- for now, assume that this is a fully specified model.
+Note: this explores how to use a log transformation in our second context.
 
 ```{r mydata}
 mydata <- causaldata::close_college
@@ -95,9 +134,30 @@ msummary(list("levels"=m_levels, "log_y"=m1),
          stars=c('*' = .1, '**' = .05, '***' = .01)) 
 ```
 
-But what if we think the returns to education will differ across race? Let's use an interaction model to examine heterogeneous treatment effects here. Recall that in an interaction model we need to include **all level terms** of our variables of interest, not just the interactions.
+## Interaction Terms
+
+Suppose that we think:
+
+-   Maybe the effects of education on HUNGRY differ by gender. Let's use an interaction model to examine heterogeneous treatment effects here. Recall that in an interaction model we need to include **all level terms** of our variables of interest, not just the interactions.
+
+-   But what if we think the returns to education will differ across race?
 
 ```{r interactions}
+# First example: case study on food security
+fao_2 <- lm(HUNGRY ~ education + gender + age + urbanrural + 
+              education:gender, 
+            data=data.FAO_country1, weight=wt)
+msummary(list(fao_levels,fao_2),
+         stars=c('*' = .1, '**' = .05, '***' = .01)) 
+
+# What if we had left out the main effect?
+fao_3 <- lm(HUNGRY ~ age + urbanrural + 
+              education:gender, 
+            data=data.FAO_country1, weight=wt)
+msummary(list(fao_levels,fao_2, fao_3),
+         stars=c('*' = .1, '**' = .05, '***' = .01)) 
+
+# Second example: education and wages
 # How does the effect of education differ across race?
 m2 <- lm(lwage ~ educ + exper + black + educ:black, data=mydata)
 msummary(list(m1,m2),
@@ -111,7 +171,11 @@ msummary(list(m1,m2,m3),
 
 ## Polynomial Models
 
-What if we think experience has a nonlinear effect on wages? Why might this be true?
+What if we think:
+
+-   Age has a nonlinear effect on hunger (why might this be true?)
+
+-   Experience has a nonlinear effect on wages? Why might this be true?
 
 Let's model this nonlinearity by including a squared term in the regression
 
