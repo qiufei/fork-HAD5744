@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r header}
 # I like to include several additional notes in the header of my files here:
 #
-# Last modified: 8/11/2022
+# Last modified: 9/9/2024
 #
 ### PURPOSE:
   # Lecture 1 code and output file
