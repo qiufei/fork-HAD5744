@@ -1,5 +1,5 @@
-# HAD5744_2022F
-Course materials for Health Econometrics I, University of Toronto IHPME -- Fall 2022
+# HAD5744
+Course materials for Health Econometrics I, University of Toronto IHPME -- last updated Fall 2024
 
 Instructor: 
 
