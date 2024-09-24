@@ -47,12 +47,13 @@ The answers to the specific questions here are:
 Now we summarize the vector d:
 ``` {r problem-3}
 # these are easy!
-sum(d)
+sum(d)/length(d)
+mean(d)
 median(d)
 sd(d)
 
 ```
-We find that the average value in `d` is 175,120, with a median of 5897.5 (what does that tell us about the distribution?). The standard deviation is quite large at 2608.57. 
+We find that the average value in `d` is 5,472.5, with a median of 5897.5 (what does that tell us about the distribution?). The standard deviation is quite large at 2608.57. 
 
 ## Problem 4: 
 This problem asks us to perform matrix multiplication. 
@@ -81,6 +82,7 @@ mydata <- ons_mortality
 # We have two numeric variables (counts and week_no)
 # We also have a date variable 
 summary(mydata$counts)
+summary(mydata)
 sd(mydata$counts, na.rm=T)
 
 summary(mydata$week_no)
@@ -88,6 +90,9 @@ sd(mydata$week_no, na.rm=T)
 
 levels(factor(mydata$category_1))
 levels(factor(mydata$category_2))
+
+# give me all of the unique values of mydata$category2
+# unique(mydata$category_2)
 ```
 
 These commands give some hopefully useful additional commands you can play around with to get a sense of what your data is telling you. 
@@ -97,7 +102,8 @@ Now we will summarize that data and create a nice table.
 
 ```{r problem-6}
 library(tidyverse)
-mydata %>% filter(category_1 == "Total deaths") %>% group_by(week_no) %>% summarise(mean_deaths = mean(counts)) %>% knitr::kable()
+mydata %>% filter(category_1 == "Total deaths") %>% group_by(week_no) %>% summarise(mean_deaths = mean(counts)) %>%
+knitr::kable()
 ```
 
 Note that kable isn't the only option for making tables! You'll explore this more in Assignment 1, but there are many packages and you should explore the ones that make sense to you and have output you like. 
@@ -108,6 +114,8 @@ Now we will create a plot of the data.
 Using your loaded data, make a scatterplot showing the relationship between week_no and (the average number of) deaths where COVID-19 was mentioned on the death certificate
 
 ```{r problem-7}
+# make a scatterplot showing the relationship in mydata between week_no counts when category1 includes COVID-19
+
 # note: at least for me, copilot was useful but insufficient here!
 mydata %>% filter(category_1 == "Deaths where COVID-19 was mentioned on the death certificate (ICD-10 U07.1 and U07.2)") %>% group_by(week_no) %>% summarise(mean_deaths = mean(counts)) %>% ggplot(aes(x=week_no, y=mean_deaths)) + geom_point() + geom_smooth(method="lm") + labs(x="Week Number", y = "Average COVID Deaths") + theme_minimal()
   # What's happening here? Did we do something wrong? 

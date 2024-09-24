@@ -86,7 +86,7 @@ Now that we've defined a function, we can use it! Let's run the gap function 10,
 
 ```{r mc-simulation}
 
-sim <- replicate(10000, gap()) 
+sim <- replicate(10000, gap()) # Takes a while to run on 10k
 mean(sim)
 hist(sim)
 ```
@@ -100,10 +100,10 @@ Another, vastly superior method to graphics is dplyr's "ggplot", which follows t
 ```{r ggplot-histogram}
 sim <- tibble(sim) # We need a data frame for ggplot to work 
 ggplot(data=sim, aes(sim))+
-  geom_histogram(binwidth=.5,color='gray70',fill='cadetblue') +
+  geom_histogram(binwidth=.3,color='gray70',fill='cadetblue') +
   theme_minimal() + 
   labs(x="Estimated ATE", y="",title="Estimated ATE vs. Truth") + 
-  geom_vline(xintercept=0.6, color="red", linetype="dashed",size=1)
+  geom_vline(xintercept=0.6, color="red", linetype="dashed",linewidth=1)
 
   # Notes: 
     # First, need to tell ggplot what tibble object to look at (sim) 

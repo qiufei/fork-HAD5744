@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ################################################################################
 # I like to include several additional notes in the header of my files here:
 #
-# Last modified: 8/11/2022
+# Last modified: 9/20/2024
 #
 ### PURPOSE:
   # Lecture 2 code and output file
@@ -167,6 +167,7 @@ There's **a lot** we can do in R with regressions. Let's try some!
 ```{r model-viz}
 # Looking at your model output
 reg_tb <- lm(y ~ x, data=tb) # Store regression as an object 
+
 
 summary(reg_tb) # gives you a full summary
 regdata <- broom::tidy(reg_tb, conf.int=TRUE) # Stores regression output in a data frame
