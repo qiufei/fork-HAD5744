@@ -30,6 +30,8 @@ library(faux) # Useful package for simulating data
 library(modelsummary) # For making regression tables
 library(causaldata) # Useful toy data sets
 library(here) # Helpful in working with directories and projects
+library(dotwhisker) # For coefficient plots
+library(gapminder) # For coefficient plots
 
 set.seed(122333) # Setting the seed helps to make random number generators give us the same numbers across machines
 ################################################################################
@@ -64,11 +66,43 @@ summary(lm_complex)
 ```
 How can we visualize these regressions? Let's use a coefficient plot! 
 ```{r coefplot}
-library(dotwhisker)
-library(gapminder)
-
-dwplot(lm_complex) # how can you customize this? 
+dwplot(list(lm_simple,lm_complex)) # how can you customize this? 
 # a tutorial: https://felixhaass.github.io/dataviz_ggplot2/session4.html
+
+# To customize, let's combine our models as objects
+m1_tidy <- tidy(lm_simple) %>% 
+  mutate(model = "Baseline")
+
+# repeat for model 2
+m2_tidy <- tidy(lm_complex) %>% 
+  mutate(model = "Additional Controls")
+
+# "glue" model data frames together
+all_models <- bind_rows(m1_tidy, m2_tidy) %>% 
+  filter(term != "(Intercept)") %>% # remove the intercept
+  relabel_predictors(c(a1cs = "Rate of A1C checks", 
+                       education = "Average Education"))
+
+# An example of customization (compare with slides)
+dwplot(all_models, 
+       # here are our regular aesthetics
+       dot_args = list(aes(colour = model, 
+                       shape = model, size=1.2)), 
+       whisker_args = list(size=1)) + 
+  theme_bw() +
+  labs(title = "Predicting Diabetic Hospitalization Rates", 
+       x = "Coefficient Estimate with 95% CIs", 
+       y = "", size="",
+       caption = "Note: All independent variables are measured as % relative to baseline mean.") +
+  geom_vline(xintercept = 0, linetype = "dashed", size=1) +
+  theme(plot.title = element_text(face="bold"),
+        legend.position = "bottom",
+        legend.background = element_rect(colour="grey80"),
+        legend.title.align = .5) +
+  guides(size = "none") + # remove the size legend
+  scale_shape_discrete(name  ="Models", breaks = c(0, 1)) + # breaks assign shapes
+  scale_color_discrete(type=c("#E69F00", "#56B4E9"),name = "Models") # breaks assign colors
+# ggsave(here("coefplot.png"), width = 8, height = 6, dpi = 300) # save the plot
 ```
 
 ## Inference in regression 
@@ -262,15 +296,26 @@ summary(res$NumberofLocations)
 
 ## Let's run our regression models
 m1 <- lm(inspection_score ~ NumberofLocations, data = res)
-m2 <- lm(inspection_score ~ NumberofLocations + Year, data = res)
+m2 <- lm(inspection_score ~ NumberofLocations + Year + Weekend, data = res)
 
 # Give msummary a list() of the models we want in our table
 # and save to a file using the here() library
 # Note that you select the file type (html, pdf, etc.)
 # (see help(msummary) for other options)
-msummary(list("Simple"=m1,"Full"=m2),
-         stars=TRUE,
-         output= here('regression_table.html')) 
+gm <- tibble::tribble(
+  ~raw,        ~clean,          ~fmt,
+  "nobs",      "N",             0)
+
+msummary(list("Simple"=m1,"Full"=m2), # Rename columns
+         stars=TRUE, # Include stars for statistical significance
+         fmt = 2, # how many decimal places do you want? 
+        coef_rename = c("(Intercept)" = "Intercept", 
+                        "NumberofLocations" = "Number of Locations", 
+                        "Year" = "Year", 
+                        "WeekendTRUE" = "Inspection on a Weekend"), # Rename the rows
+        gof_omit = 'DF|Deviance|RMSE|AIC|BIC|Log.Lik', # Omit some of the goodness of fit stats
+        gof_map = gm) # If you just want to include N here (how could you add in, say, R2?)
+         # output= here('regression_table.html')) 
 # If you want a folder within your directory, you would say here("Output", "RegressionTable.html")
 
 # Default significance stars are +/*/**/*** .1/.05/.01/.001. Social science
