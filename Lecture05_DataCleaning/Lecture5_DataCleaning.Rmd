@@ -1,5 +1,5 @@
 ---
-title: "Lecture 4 Code"
+title: "Lecture 5 Code"
 author: "Alex Hoagland"
 date: "`r Sys.Date()`"
 output: html_document
@@ -13,7 +13,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ################################################################################
 # I like to include several additional notes in the header of my files here:
 #
-# Last modified:  8/6/2024
+# Last modified:  10/10/2024
 #
 ### PURPOSE:
   # Lecture 5 code and output file
@@ -78,6 +78,7 @@ hist(data$EXPTOT) # Quiz: how would we clean this up for a ggplot figure?
 data$EXPTOT <- data$EXPTOT * 1.23 # inflation adjust from 2019 to 2024 USD (https://www.in2013dollars.com/us/inflation/2019?amount=1)
 data$EXPTOT <- ifelse(data$EXPTOT > 250000, 250000, data$EXPTOT) # topcode
 hist(data$EXPTOT)
+data <- data %>% mutate(logEXPTOT = log(EXPTOT)) # log-transform for analysis
 data$EXPTOT %>% summary() 
 
 # Now cause we're curious -- what fraction of individuals have 0 spending (and does it make sense?)
