@@ -37,7 +37,7 @@ set.seed(03262020) # Setting the seed helps to make random number generators giv
 ################################################################################
 ```
 
-## Peeliminaries
+## Preliminaries
 
 Let's simulate some data on individual blood types. You can mostly ignore this code, it's a little complicated because I was trying to bake in some correlations so this exercise would be at least a little interesting.
 

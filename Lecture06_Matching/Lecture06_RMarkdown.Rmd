@@ -296,7 +296,7 @@ It looks like our common support assumption won't be a problem here. Hence, we c
 ps_match <- lm(outcome_poor ~ treated,
                data = regdata_psm,
                weights=1/distance) 
-ps_match2 <- lm(outcome_poor ~ treated + cov_prov_11 + cov_prov_12 + cov_prov_13 + cov_prov_24 + cov_prov_35 + cov_prov_46 + cov_prov_47 + cov_prov_48 + cov_prov_59 + cov_prov_60 + propscore,
+ps_match2 <- lm(outcome_poor ~ treated + cov_prov_11 + cov_prov_12 + cov_prov_13 + cov_prov_24 + cov_prov_35 + cov_prov_46 + cov_prov_47 + cov_prov_48 + cov_prov_59 + cov_prov_60,
                data = regdata_psm,
                weights=1/distance) 
 msummary(list("OLS"=m1, "Nearest Neighbor"=nn_match, "Propensity Score"=ps_match, "Propensity Score with Covariates"=ps_match2),
