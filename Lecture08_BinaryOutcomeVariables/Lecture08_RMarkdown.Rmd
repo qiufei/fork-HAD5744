@@ -47,11 +47,7 @@ set.seed(03262020)
 
 ## Linear Probability Models
 
-Suppose we are interested a causal model predicting which individuals purchase health insurance. We will model this purchase as a binary outcome, with $0 =$ no insurance, $1=$ insurance, and will use the same data from Lecture 5.
-
-Note that you should have a project loaded for this lecture in order to access the data using `here()`.
-
-Let's first estimate a linear probability model of 
+Suppose we are estimated in the effect of how recently someone donated blood on whether or not they donated in March 2007. Let's first estimate a linear probability model:
 
 ```{r lpm}
 mydata <- FFTrees::blood # data on blood donation 
@@ -115,12 +111,6 @@ msummary(list("LPM"=m1,"Logit"=m2,"Probit"=m3),
          stars=c('*' = .1, '**' = .05, '***' = .01))
 ```
 
-The main way that results are reported for logit/probit regressions are **odds ratios**. 
-
-```{r odds-ratios}
-
-```
-
 We can visualize the output of a logit/probit regression (somewhat; see below) using an odds plot
 
 ```{r odds-plot}
@@ -150,20 +140,22 @@ Recall that we need to compare the **marginal effects** across regressions, as t
 
 # 1. Each individual marginal effect
 allmarginaleffects <- marginaleffects(m2) # Gives you individual ME for all variables/observations
-allmarginaleffects <- allmarginaleffects %>% mutate(bin = ifelse(p.value > 0.1, 0, 
-                                           ifelse(p.value <= 0.1 & p.value > 0.05, 1, 
-                                                  ifelse(p.value <= 0.05 & p.value > 0.01, 2, 3))))
-ggplot(allmarginaleffects, aes(x=dydx)) + 
-  geom_histogram(aes(fill=as.factor(bin))) + 
+allmarginaleffects <- allmarginaleffects %>% 
+  mutate(bin = ifelse(p.value > 0.1, 0, 
+                      ifelse(p.value <= 0.1 & p.value > 0.05, 1, 
+                        ifelse(p.value <= 0.05 & p.value > 0.01, 2, 3))))
+allmarginaleffects %>% filter(term == "recency") %>% 
+  ggplot(aes(x=estimate)) + 
+  geom_histogram(alpha=0.4, fill='blue', color='blue') + 
   theme_classic() + 
   labs(x="Marginal Effect", y = "Value", fill = "Significance")
 
 # 2. and 4. MER and MEM: use the datagrid() function
-summary(marginaleffects(m2, datagrid(age  =50, sex = "male", bmi = 50, children = 0, smoker = 1, grid.type = 'counterfactual')))
+summary(marginaleffects(m2, datagrid(recency = 7, frequency = 4, time = 31, grid.type = 'counterfactual')))
 
 # 3. AME
 summary(marginaleffects(m2)) # This gives you AME
-plot(marginaleffects(m2)) # Convenience plot 
+# plot_slopes(marginaleffects(m2)) # Convenience plot 
 
 # 4. MEM: 
 summary(marginaleffects(m2, datagrid()))
