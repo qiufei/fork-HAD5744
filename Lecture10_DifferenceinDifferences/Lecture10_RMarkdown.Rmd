@@ -1,5 +1,5 @@
 ---
-title: "Lecture 9 Code"
+title: "Lecture 10 Code"
 author: "Alex Hoagland"
 date: "`r Sys.Date()`"
 output: html_document
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 # Last modified: 8/12/2022
 #
 ### PURPOSE:
-  # Lecture 9 code and output file
+  # Lecture 10 code and output file (DD)
 # 
 ### NOTES:
   # - uses the Tidyverse package and Dplyr
@@ -88,11 +88,14 @@ ggplot(mydata[which(mydata$location=="Michigan"),],aes(x=date,y=monthly_vaccinat
 regdata <- mydata %>% filter(location %in% c("Michigan","Ohio"))
 
 # Definition of key variables
+regdata <- regdata %>% mutate(state = ifelse(location == "Ohio",1,0),
+                              post = ifelse(date >= "Jun 2021",1,0),
+                              inter = state * post)
 regdata <- regdata %>% mutate(treated = ifelse(location == "Ohio", 1, 0), 
                               interaction = ifelse(location == "Ohio",date,0))
 
 # Statistical tests: are the two groups' trends different?
-pretrend_test <- lm(monthly_vaccinations_per_million ~ date + interaction, data=regdata)
+pretrend_test <- lm(monthly_vaccinations_per_million ~ date + interaction, data=(regdata %>% filter(post == 0)))
 msummary(list(pretrend_test),
          vcov=c(rep("robust",1)),
          stars=c('*' = .1, '**' = .05, '***' = .01)) # Interpret each coefficient here
@@ -108,11 +111,6 @@ $$ vaccinations_{it}=\beta_0 + \beta_1\mathbb{I}\{treated_i\} + \beta_2\mathbb{I
 
 ```{r did-2x2}
 ##### 2. Two-way DiD ####
-# Definition of key variables
-regdata <- regdata %>% mutate(state = ifelse(location == "Ohio",1,0),
-                              post = ifelse(date >= "Jun 2021",1,0),
-                              inter = state * post)
-
 # Main regression
 did_simple <- lm(monthly_vaccinations_per_million ~ state + post + inter, data=regdata)
 msummary(list("Simple DID"=did_simple),
@@ -135,12 +133,6 @@ ggplot(data=regdata,aes(x=date,y=monthly_vaccinations_per_million,group=state,co
 ggplot(data=regdata,aes(x=date,y=logy,group=state,color=factor(state))) + 
   geom_line() + theme_classic() + labs(x="Date",y="Montly Vaccinations",color="State = Ohio") + 
   geom_vline(xintercept = 2021.417,size=1.5,color='red',linetype='dashed')
-
-# Test of trend differences in logs
-pretrend_test2 <- lm(logy ~ date + interaction, data=regdata)
-msummary(list("Levels"=pretrend_test,"Logs"=pretrend_test2),
-         vcov=c(rep("robust",2)),
-         stars=c('*' = .1, '**' = .05, '***' = .01)) # May consider using log(y) anyway -- why?
 
 # Log DID
 did_log <- lm(logy ~ state + post + inter, data=regdata)
