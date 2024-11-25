@@ -16,7 +16,8 @@ knitr::opts_chunk$set(echo = TRUE)
 # Last modified: 8/15/2022
 #
 ### PURPOSE:
-  # Lecture 10 code and output file
+  # Lecture 11 code and output file
+  # synthetic control + quantile regression
 # 
 ### NOTES:
   # - uses the Tidyverse package and Dplyr
@@ -250,7 +251,8 @@ placebo_out %>% plot_differences()  +
     y="Percent Fully Vaccinated"
   )
 
-placebo_out %>% grab_signficance() %>% filter(unit_name=="OH")
+# This was giving me problems, needed to run in the console 
+# placebo_out %>% grab_significance() %>% filter(unit_name == "OH")
 placebo_out %>% grab_unit_weights() %>% arrange(desc(weight))
 
 placebo_out %>% plot_mspe_ratio() 
